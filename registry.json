@@ -28,6 +28,15 @@
       "files": [{ "path": "registry/ui/password-input.tsx", "type": "registry:ui" }],
       "dependencies": ["lucide-react"],
       "registryDependencies": ["button", "input"]
+    },
+    {
+      "name": "number-input",
+      "type": "registry:ui",
+      "title": "Number Input",
+      "description": "Numeric input with steppers, hold-to-repeat, keyboard arrows, clamping, and Intl formatting.",
+      "files": [{ "path": "registry/ui/number-input.tsx", "type": "registry:ui" }],
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button", "input"]
     }
   ]
 }

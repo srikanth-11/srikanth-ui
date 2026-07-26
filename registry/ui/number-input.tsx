@@ -1,0 +1,168 @@
+"use client"
+
+import * as React from "react"
+import { MinusIcon, PlusIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+
+interface NumberInputProps
+  extends Omit<
+    React.ComponentProps<typeof Input>,
+    "value" | "defaultValue" | "onChange" | "type" | "min" | "max" | "step"
+  > {
+  value?: number | null
+  defaultValue?: number
+  onChange?: (value: number | null) => void
+  min?: number
+  max?: number
+  step?: number
+  format?: Intl.NumberFormatOptions
+  locale?: string
+  allowWheel?: boolean
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n))
+}
+
+const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
+  (
+    {
+      value,
+      defaultValue,
+      onChange,
+      min = Number.MIN_SAFE_INTEGER,
+      max = Number.MAX_SAFE_INTEGER,
+      step = 1,
+      format,
+      locale,
+      allowWheel = false,
+      className,
+      onBlur,
+      onFocus,
+      onKeyDown,
+      ...props
+    },
+    ref
+  ) => {
+    const isControlled = value !== undefined
+    const [internal, setInternal] = React.useState<number | null>(defaultValue ?? null)
+    const current = isControlled ? value : internal
+    const [editing, setEditing] = React.useState(false)
+    const [text, setText] = React.useState("")
+    const holdRef = React.useRef<ReturnType<typeof setInterval> | null>(null)
+
+    if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
+      console.warn("NumberInput: `value` without `onChange` — component is read-only.")
+    }
+
+    const formatter = React.useMemo(
+      () => new Intl.NumberFormat(locale, format),
+      [locale, format]
+    )
+
+    const commit = (n: number | null) => {
+      const next = n === null ? null : clamp(n, min, max)
+      if (!isControlled) setInternal(next)
+      onChange?.(next)
+      return next
+    }
+
+    const stepBy = (dir: 1 | -1) => {
+      commit((current ?? 0) + dir * step)
+    }
+
+    const startHold = (dir: 1 | -1) => {
+      stepBy(dir)
+      let ticks = 0
+      holdRef.current = setInterval(() => {
+        ticks++
+        if (ticks > 3) stepBy(dir) // delay before repeat kicks in
+      }, 120)
+    }
+    const endHold = () => {
+      if (holdRef.current) clearInterval(holdRef.current)
+      holdRef.current = null
+    }
+    React.useEffect(() => endHold, [])
+
+    const display = editing
+      ? text
+      : current === null || current === undefined
+        ? ""
+        : formatter.format(current)
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      setEditing(false)
+      const cleaned = text.replace(/[^\d.,-]/g, "").replace(/,/g, "")
+      const parsed = cleaned === "" || cleaned === "-" ? null : Number(cleaned)
+      commit(parsed === null || Number.isNaN(parsed) ? null : parsed)
+      onBlur?.(e)
+    }
+
+    return (
+      <div className={cn("flex items-stretch gap-1", className)}>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label="Decrease"
+          tabIndex={-1}
+          disabled={current !== null && current !== undefined && current <= min}
+          onPointerDown={() => startHold(-1)}
+          onPointerUp={endHold}
+          onPointerLeave={endHold}
+        >
+          <MinusIcon className="size-4" />
+        </Button>
+        <Input
+          ref={ref}
+          type="text"
+          inputMode="decimal"
+          role="spinbutton"
+          aria-valuenow={current ?? undefined}
+          aria-valuemin={min === Number.MIN_SAFE_INTEGER ? undefined : min}
+          aria-valuemax={max === Number.MAX_SAFE_INTEGER ? undefined : max}
+          value={display}
+          onFocus={(e) => {
+            setEditing(true)
+            setText(current === null || current === undefined ? "" : String(current))
+            onFocus?.(e)
+          }}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={(e) => {
+            onKeyDown?.(e)
+            if (e.defaultPrevented) return
+            if (e.key === "ArrowUp") { e.preventDefault(); stepBy(1); setEditing(false) }
+            if (e.key === "ArrowDown") { e.preventDefault(); stepBy(-1); setEditing(false) }
+          }}
+          onWheel={(e) => {
+            if (!allowWheel || document.activeElement !== e.currentTarget) return
+            e.preventDefault()
+            stepBy(e.deltaY < 0 ? 1 : -1)
+          }}
+          className="text-center tabular-nums"
+          {...props}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label="Increase"
+          tabIndex={-1}
+          disabled={current !== null && current !== undefined && current >= max}
+          onPointerDown={() => startHold(1)}
+          onPointerUp={endHold}
+          onPointerLeave={endHold}
+        >
+          <PlusIcon className="size-4" />
+        </Button>
+      </div>
+    )
+  }
+)
+NumberInput.displayName = "NumberInput"
+
+export { NumberInput }

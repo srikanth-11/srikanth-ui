@@ -10,6 +10,15 @@
       "description": "Keyboard-first time input with hour/minute/second segments and 12/24h support.",
       "files": [{ "path": "registry/ui/time-picker.tsx", "type": "registry:ui" }],
       "registryDependencies": ["button"]
+    },
+    {
+      "name": "phone-input",
+      "type": "registry:ui",
+      "title": "Phone Input",
+      "description": "International phone input with searchable country select, as-you-type formatting, E.164 output.",
+      "files": [{ "path": "registry/ui/phone-input.tsx", "type": "registry:ui" }],
+      "dependencies": ["libphonenumber-js", "lucide-react"],
+      "registryDependencies": ["button", "input", "popover", "command"]
     }
   ]
 }

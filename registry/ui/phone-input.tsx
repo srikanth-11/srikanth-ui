@@ -51,6 +51,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const [country, setCountry] = React.useState<CountryCode>(defaultCountry)
     const [national, setNational] = React.useState("")
     const [open, setOpen] = React.useState(false)
+    const lastEmitted = React.useRef<string | undefined>(undefined)
 
     if (process.env.NODE_ENV !== "production" && value !== undefined && !onChange) {
       console.warn("PhoneInput: `value` without `onChange` — component is read-only.")
@@ -59,15 +60,29 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     // Sync from controlled E.164 value
     React.useEffect(() => {
       if (value === undefined) return
+      // Skip echo of our own onChange
+      if (value === lastEmitted.current) return
+
       const parsed = parsePhoneNumberFromString(value)
       if (parsed?.country) setCountry(parsed.country)
-      setNational(parsed ? parsed.formatNational() : value.replace(/^\+\d*/, ""))
-    }, [value])
+
+      if (parsed) {
+        setNational(parsed.formatNational())
+      } else {
+        // External value doesn't parse — derive digits and format with current country
+        const cc = "+" + getCountryCallingCode(country)
+        const digits = value.startsWith(cc) ? value.slice(cc.length) : value.replace(/\D/g, "")
+        const formatter = new AsYouType(country)
+        setNational(formatter.input(digits))
+      }
+    }, [value, country])
 
     const emit = (digits: string, c: CountryCode) => {
       const formatter = new AsYouType(c)
       setNational(formatter.input(digits))
-      onChange?.(digits ? `+${getCountryCallingCode(c)}${digits}` : "")
+      const e164 = digits ? `+${getCountryCallingCode(c)}${digits}` : ""
+      lastEmitted.current = e164
+      onChange?.(e164)
     }
 
     const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {

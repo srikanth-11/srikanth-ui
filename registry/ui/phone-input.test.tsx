@@ -1,3 +1,4 @@
+import * as React from "react"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
@@ -33,5 +34,18 @@ describe("PhoneInput", () => {
   it("re-exports isValidPhoneNumber", () => {
     expect(isValidPhoneNumber("+12025550123")).toBe(true)
     expect(isValidPhoneNumber("+1202")).toBe(false)
+  })
+
+  it("controlled: typed digits appear and round-trip through value", async () => {
+    function Harness() {
+      const [v, setV] = React.useState("")
+      return <PhoneInput value={v} onChange={setV} defaultCountry="US" />
+    }
+    render(<Harness />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    await userEvent.type(input, "202")
+    expect((input as HTMLInputElement).value).not.toBe("")
+    await userEvent.type(input, "5550123")
+    expect((input as HTMLInputElement).value).toMatch(/\(202\) 555-0123/)
   })
 })

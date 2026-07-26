@@ -2,5 +2,14 @@
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "srikanth",
   "homepage": "https://srikanth-ui.vercel.app",
-  "items": []
+  "items": [
+    {
+      "name": "time-picker",
+      "type": "registry:ui",
+      "title": "Time Picker",
+      "description": "Keyboard-first time input with hour/minute/second segments and 12/24h support.",
+      "files": [{ "path": "registry/ui/time-picker.tsx", "type": "registry:ui" }],
+      "registryDependencies": ["button"]
+    }
+  ]
 }

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { NumberInput } from "./number-input"
@@ -50,5 +50,18 @@ describe("NumberInput", () => {
     await userEvent.clear(input)
     await userEvent.tab()
     expect(onChange).toHaveBeenLastCalledWith(null)
+  })
+
+  it("hold-to-repeat steps repeatedly while held", () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    render(<NumberInput defaultValue={5} step={1} onChange={onChange} aria-label="Qty" />)
+    fireEvent.pointerDown(screen.getByRole("button", { name: /increase/i }))
+    vi.advanceTimersByTime(1000)
+    fireEvent.pointerUp(screen.getByRole("button", { name: /increase/i }))
+    vi.useRealTimers()
+    const values = onChange.mock.calls.map((c) => c[0])
+    expect(values[0]).toBe(6)
+    expect(Math.max(...values)).toBeGreaterThan(6)
   })
 })

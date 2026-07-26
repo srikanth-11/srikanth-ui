@@ -74,11 +74,15 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     }
 
     const startHold = (dir: 1 | -1) => {
-      stepBy(dir)
+      let val = clamp((current ?? 0) + dir * step, min, max)
+      commit(val)
       let ticks = 0
       holdRef.current = setInterval(() => {
         ticks++
-        if (ticks > 3) stepBy(dir) // delay before repeat kicks in
+        if (ticks > 3) {
+          val = clamp(val + dir * step, min, max)
+          commit(val)
+        }
       }, 120)
     }
     const endHold = () => {

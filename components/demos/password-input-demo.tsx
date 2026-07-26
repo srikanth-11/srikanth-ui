@@ -1,0 +1,13 @@
+"use client"
+import * as React from "react"
+import { PasswordInput, PasswordStrength } from "@/registry/ui/password-input"
+
+export function PasswordInputDemo() {
+  const [pw, setPw] = React.useState("")
+  return (
+    <div className="w-full max-w-sm space-y-3">
+      <PasswordInput placeholder="Password" value={pw} onChange={(e) => setPw(e.target.value)} />
+      <PasswordStrength value={pw} />
+    </div>
+  )
+}

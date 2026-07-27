@@ -38,6 +38,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       format,
       locale,
       allowWheel = false,
+      disabled,
       className,
       onBlur,
       onFocus,
@@ -52,6 +53,8 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const [editing, setEditing] = React.useState(false)
     const [text, setText] = React.useState("")
     const holdRef = React.useRef<ReturnType<typeof setInterval> | null>(null)
+    const inputRef = React.useRef<HTMLInputElement | null>(null)
+    React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement)
 
     if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
       console.warn("NumberInput: `value` without `onChange` — component is read-only.")
@@ -91,6 +94,22 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     }
     React.useEffect(() => endHold, [])
 
+    // React's onWheel is passive, so preventDefault() there is a no-op (page still
+    // scrolls + browsers warn). Attach a native non-passive listener instead.
+    const stepByLatest = React.useRef(stepBy)
+    stepByLatest.current = stepBy
+    React.useEffect(() => {
+      const el = inputRef.current
+      if (!el || !allowWheel) return
+      const handler = (e: WheelEvent) => {
+        if (document.activeElement !== el) return
+        e.preventDefault()
+        stepByLatest.current(e.deltaY < 0 ? 1 : -1)
+      }
+      el.addEventListener("wheel", handler, { passive: false })
+      return () => el.removeEventListener("wheel", handler)
+    }, [allowWheel])
+
     const display = editing
       ? text
       : current === null || current === undefined
@@ -99,11 +118,15 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       setEditing(false)
+      // ponytail: naive parse (strips , as thousands sep) — breaks comma-decimal locales; swap for Intl-aware parser if reported
       const cleaned = text.replace(/[^\d.,-]/g, "").replace(/,/g, "")
       const parsed = cleaned === "" || cleaned === "-" ? null : Number(cleaned)
       commit(parsed === null || Number.isNaN(parsed) ? null : parsed)
       onBlur?.(e)
     }
+
+    const decreaseDisabled = disabled || (current !== null && current !== undefined && current <= min)
+    const increaseDisabled = disabled || (current !== null && current !== undefined && current >= max)
 
     return (
       <div className={cn("flex items-stretch gap-1", className)}>
@@ -113,15 +136,15 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           size="icon"
           aria-label="Decrease"
           tabIndex={-1}
-          disabled={current !== null && current !== undefined && current <= min}
-          onPointerDown={() => startHold(-1)}
+          disabled={decreaseDisabled}
+          onPointerDown={() => !decreaseDisabled && startHold(-1)}
           onPointerUp={endHold}
           onPointerLeave={endHold}
         >
           <MinusIcon className="size-4" />
         </Button>
         <Input
-          ref={ref}
+          ref={inputRef}
           type="text"
           inputMode="decimal"
           role="spinbutton"
@@ -129,6 +152,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           aria-valuemin={min === Number.MIN_SAFE_INTEGER ? undefined : min}
           aria-valuemax={max === Number.MAX_SAFE_INTEGER ? undefined : max}
           value={display}
+          disabled={disabled}
           onFocus={(e) => {
             setEditing(true)
             setText(current === null || current === undefined ? "" : String(current))
@@ -142,11 +166,6 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             if (e.key === "ArrowUp") { e.preventDefault(); stepBy(1); setEditing(false) }
             if (e.key === "ArrowDown") { e.preventDefault(); stepBy(-1); setEditing(false) }
           }}
-          onWheel={(e) => {
-            if (!allowWheel || document.activeElement !== e.currentTarget) return
-            e.preventDefault()
-            stepBy(e.deltaY < 0 ? 1 : -1)
-          }}
           className="text-center tabular-nums"
           {...props}
         />
@@ -156,8 +175,8 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           size="icon"
           aria-label="Increase"
           tabIndex={-1}
-          disabled={current !== null && current !== undefined && current >= max}
-          onPointerDown={() => startHold(1)}
+          disabled={increaseDisabled}
+          onPointerDown={() => !increaseDisabled && startHold(1)}
           onPointerUp={endHold}
           onPointerLeave={endHold}
         >

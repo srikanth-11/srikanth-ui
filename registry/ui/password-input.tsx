@@ -9,13 +9,14 @@ import { Input } from "@/components/ui/input"
 const PasswordInput = React.forwardRef<
   HTMLInputElement,
   Omit<React.ComponentProps<typeof Input>, "type">
->(({ className, ...props }, ref) => {
+>(({ className, disabled, ...props }, ref) => {
   const [visible, setVisible] = React.useState(false)
   return (
     <div className="relative">
       <Input
         ref={ref}
         type={visible ? "text" : "password"}
+        disabled={disabled}
         className={cn("pe-10", className)}
         {...props}
       />
@@ -25,6 +26,7 @@ const PasswordInput = React.forwardRef<
         size="icon"
         aria-label={visible ? "Hide password" : "Show password"}
         aria-pressed={visible}
+        disabled={disabled}
         onClick={() => setVisible((v) => !v)}
         className="text-muted-foreground absolute end-0 top-0 h-full w-10 hover:bg-transparent"
       >
@@ -57,7 +59,7 @@ interface PasswordStrengthProps extends React.HTMLAttributes<HTMLDivElement> {
 const PasswordStrength = React.forwardRef<HTMLDivElement, PasswordStrengthProps>(
   ({ value, rules = defaultPasswordRules, getScore, className, ...props }, ref) => {
     const met = rules.map((r) => r.test(value))
-    const score = getScore ? getScore(value) : met.filter(Boolean).length / rules.length
+    const score = getScore ? getScore(value) : rules.length ? met.filter(Boolean).length / rules.length : 0
     const pct = Math.round(Math.min(1, Math.max(0, score)) * 100)
     const segments = 4
     const active = Math.round((pct / 100) * segments)

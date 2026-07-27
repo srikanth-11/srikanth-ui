@@ -41,15 +41,32 @@ function countryName(code: string) {
 interface PhoneInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "defaultValue"> {
   value?: string
+  /** Uncontrolled initial value, E.164. Ignored if `value` is provided. */
+  defaultValue?: string
   defaultCountry?: CountryCode
   onChange?: (e164: string) => void
   onCountryChange?: (country: CountryCode) => void
 }
 
 const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
-  ({ value, defaultCountry = "US", onChange, onCountryChange, className, ...props }, ref) => {
-    const [country, setCountry] = React.useState<CountryCode>(defaultCountry)
-    const [national, setNational] = React.useState("")
+  (
+    { value, defaultValue, defaultCountry = "US", onChange, onCountryChange, disabled, className, ...props },
+    ref
+  ) => {
+    const [country, setCountry] = React.useState<CountryCode>(() => {
+      if (value === undefined && defaultValue) {
+        const parsed = parsePhoneNumberFromString(defaultValue)
+        if (parsed?.country) return parsed.country
+      }
+      return defaultCountry
+    })
+    const [national, setNational] = React.useState(() => {
+      if (value === undefined && defaultValue) {
+        const parsed = parsePhoneNumberFromString(defaultValue)
+        if (parsed) return parsed.formatNational()
+      }
+      return ""
+    })
     const [open, setOpen] = React.useState(false)
     const lastEmitted = React.useRef<string | undefined>(undefined)
 
@@ -86,7 +103,25 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     }
 
     const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-      emit(e.target.value.replace(/\D/g, ""), country)
+      const raw = e.target.value
+      if (raw.startsWith("+")) {
+        // Full international number (e.g. pasted) — reparse rather than naively
+        // stripping to digits, which would double up the calling code.
+        const parsed = parsePhoneNumberFromString(raw)
+        if (parsed?.country) {
+          if (parsed.country !== country) {
+            setCountry(parsed.country)
+            onCountryChange?.(parsed.country)
+          }
+          emit(parsed.nationalNumber, parsed.country)
+          return
+        }
+        const cc = getCountryCallingCode(country)
+        const digits = raw.replace(/\D/g, "")
+        emit(digits.startsWith(cc) ? digits.slice(cc.length) : digits, country)
+        return
+      }
+      emit(raw.replace(/\D/g, ""), country)
     }
 
     const selectCountry = (c: CountryCode) => {
@@ -106,6 +141,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
               role="combobox"
               aria-expanded={open}
               aria-label="Select country"
+              disabled={disabled}
               className="w-[110px] justify-between font-mono"
             >
               <span>
@@ -148,6 +184,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           autoComplete="tel-national"
           value={national}
           onChange={handleInput}
+          disabled={disabled}
           {...props}
         />
       </div>

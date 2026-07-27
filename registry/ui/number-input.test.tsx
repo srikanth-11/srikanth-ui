@@ -52,6 +52,34 @@ describe("NumberInput", () => {
     expect(onChange).toHaveBeenLastCalledWith(null)
   })
 
+  it("disabled propagates to the steppers", async () => {
+    const onChange = vi.fn()
+    render(<NumberInput defaultValue={5} disabled onChange={onChange} aria-label="Qty" />)
+    expect(screen.getByLabelText("Qty")).toBeDisabled()
+    expect(screen.getByRole("button", { name: /increase/i })).toBeDisabled()
+    expect(screen.getByRole("button", { name: /decrease/i })).toBeDisabled()
+    await userEvent.click(screen.getByRole("button", { name: /increase/i }))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it("wheel steps value when allowWheel and focused, via a non-passive listener", () => {
+    const onChange = vi.fn()
+    render(<NumberInput defaultValue={5} step={1} allowWheel onChange={onChange} aria-label="Qty" />)
+    const input = screen.getByLabelText("Qty")
+    input.focus()
+    fireEvent.wheel(input, { deltaY: -100 })
+    expect(onChange).toHaveBeenLastCalledWith(6)
+  })
+
+  it("wheel does nothing when allowWheel is false", () => {
+    const onChange = vi.fn()
+    render(<NumberInput defaultValue={5} step={1} onChange={onChange} aria-label="Qty" />)
+    const input = screen.getByLabelText("Qty")
+    input.focus()
+    fireEvent.wheel(input, { deltaY: -100 })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   it("hold-to-repeat steps repeatedly while held", () => {
     vi.useFakeTimers()
     const onChange = vi.fn()

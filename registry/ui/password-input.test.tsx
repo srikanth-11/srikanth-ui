@@ -14,6 +14,16 @@ describe("PasswordInput", () => {
     expect(input).toHaveAttribute("type", "text")
     expect(screen.getByRole("button", { name: /hide password/i })).toHaveAttribute("aria-pressed", "true")
   })
+
+  it("disabled propagates to the visibility toggle", async () => {
+    render(<PasswordInput aria-label="Password" disabled />)
+    const input = screen.getByLabelText("Password")
+    expect(input).toBeDisabled()
+    const toggle = screen.getByRole("button", { name: /show password/i })
+    expect(toggle).toBeDisabled()
+    await userEvent.click(toggle)
+    expect(input).toHaveAttribute("type", "password")
+  })
 })
 
 describe("PasswordStrength", () => {
@@ -35,5 +45,10 @@ describe("PasswordStrength", () => {
   it("custom getScore overrides heuristic", () => {
     render(<PasswordStrength value="anything" getScore={() => 0.5} />)
     expect(screen.getByRole("meter")).toHaveAttribute("aria-valuenow", "50")
+  })
+
+  it("rules=[] does not produce NaN", () => {
+    render(<PasswordStrength value="x" rules={[]} />)
+    expect(screen.getByRole("meter")).toHaveAttribute("aria-valuenow", "0")
   })
 })

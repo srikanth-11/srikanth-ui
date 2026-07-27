@@ -129,7 +129,11 @@ const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>
         ref={ref}
         type="text"
         inputMode="numeric"
+        role="spinbutton"
         aria-label={unitLabel[unit]}
+        aria-valuenow={getUnit(date, unit, hourCycle)}
+        aria-valuemin={unit === "hours" ? (hourCycle === 12 ? 1 : 0) : 0}
+        aria-valuemax={max}
         value={display}
         onChange={() => {}}
         onKeyDown={handleKeyDown}

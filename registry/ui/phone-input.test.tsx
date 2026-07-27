@@ -1,5 +1,5 @@
 import * as React from "react"
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { PhoneInput, isValidPhoneNumber } from "./phone-input"
@@ -29,6 +29,32 @@ describe("PhoneInput", () => {
     const indianOption = await screen.findByText("India")
     await userEvent.click(indianOption)
     expect(onCountryChange).toHaveBeenCalledWith("IN")
+  })
+
+  it("pasting a full international number emits correct E.164, not a doubled calling code", async () => {
+    const onChange = vi.fn()
+    render(<PhoneInput defaultCountry="US" onChange={onChange} />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    await userEvent.click(input)
+    fireEvent.change(input, { target: { value: "+1 202 555 0123" } })
+    expect(onChange).toHaveBeenLastCalledWith("+12025550123")
+  })
+
+  it("defaultValue renders national format without calling onChange", () => {
+    const onChange = vi.fn()
+    render(<PhoneInput defaultValue="+12025550123" onChange={onChange} />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    expect((input as HTMLInputElement).value).toMatch(/\(202\) 555-0123/)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it("disabled propagates to the country trigger and blocks it opening", async () => {
+    render(<PhoneInput disabled />)
+    expect(screen.getByRole("textbox", { name: /phone number/i })).toBeDisabled()
+    const trigger = screen.getByRole("combobox", { name: /select country/i })
+    expect(trigger).toBeDisabled()
+    await userEvent.click(trigger)
+    expect(screen.queryByPlaceholderText(/search country/i)).not.toBeInTheDocument()
   })
 
   it("re-exports isValidPhoneNumber", () => {

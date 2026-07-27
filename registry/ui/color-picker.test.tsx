@@ -130,6 +130,42 @@ describe("ColorPicker", () => {
     expect(onChange).toHaveBeenCalledWith("#22c55e")
   })
 
+  it("invalid hex commit shows an error message and keeps the previous valid value", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ColorPicker value="#ff0000" onChange={onChange}>
+        <ColorPickerInput />
+      </ColorPicker>
+    )
+    const input = screen.getByRole("textbox", { name: "Hex color" }) as HTMLInputElement
+    await user.clear(input)
+    await user.type(input, "zzz{Enter}")
+    expect(onChange).not.toHaveBeenCalled()
+    expect(input).toHaveValue("#ff0000")
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/enter a valid hex color/i)
+  })
+
+  it("fixing the hex and committing clears the error", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ColorPicker value="#ff0000" onChange={onChange}>
+        <ColorPickerInput />
+      </ColorPicker>
+    )
+    const input = screen.getByRole("textbox", { name: "Hex color" }) as HTMLInputElement
+    await user.clear(input)
+    await user.type(input, "zzz{Enter}")
+    expect(screen.getByRole("alert")).toBeInTheDocument()
+    await user.clear(input)
+    await user.type(input, "#00ff00{Enter}")
+    expect(onChange).toHaveBeenCalledWith("#00ff00")
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
   it("warns in dev when value is set without onChange", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
     render(

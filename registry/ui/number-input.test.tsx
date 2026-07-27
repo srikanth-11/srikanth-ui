@@ -22,13 +22,37 @@ describe("NumberInput", () => {
     expect(onChange).toHaveBeenLastCalledWith(10)
   })
 
-  it("parses typed input on blur and clamps", async () => {
+  it("typed out-of-range input on blur shows an error and does not clamp or commit", async () => {
     const onChange = vi.fn()
     render(<NumberInput min={0} max={100} onChange={onChange} aria-label="Qty" />)
     const input = screen.getByLabelText("Qty")
     await userEvent.type(input, "250")
     await userEvent.tab()
+    expect(onChange).not.toHaveBeenCalled()
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/between/i)
+    expect(input).toHaveValue("250")
+  })
+
+  it("clampInput restores the legacy clamp-on-blur behavior", async () => {
+    const onChange = vi.fn()
+    render(<NumberInput min={0} max={100} clampInput onChange={onChange} aria-label="Qty" />)
+    const input = screen.getByLabelText("Qty")
+    await userEvent.type(input, "250")
+    await userEvent.tab()
     expect(onChange).toHaveBeenLastCalledWith(100)
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it("showErrorMessage=false hides the alert but keeps aria-invalid", async () => {
+    const onChange = vi.fn()
+    render(<NumberInput min={0} max={100} showErrorMessage={false} onChange={onChange} aria-label="Qty" />)
+    const input = screen.getByLabelText("Qty")
+    await userEvent.type(input, "250")
+    await userEvent.tab()
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
   it("formats display on blur with Intl format", async () => {

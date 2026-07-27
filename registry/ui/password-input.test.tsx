@@ -24,6 +24,19 @@ describe("PasswordInput", () => {
     await userEvent.click(toggle)
     expect(input).toHaveAttribute("type", "password")
   })
+
+  it("error prop sets aria-invalid and renders an alert", () => {
+    render(<PasswordInput aria-label="Password" error="Too short" />)
+    const input = screen.getByLabelText("Password")
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent("Too short")
+  })
+
+  it("no error by default", () => {
+    render(<PasswordInput aria-label="Password" />)
+    expect(screen.getByLabelText("Password")).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
 })
 
 describe("PasswordStrength", () => {

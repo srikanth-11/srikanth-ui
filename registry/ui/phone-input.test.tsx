@@ -74,4 +74,52 @@ describe("PhoneInput", () => {
     await userEvent.type(input, "5550123")
     expect((input as HTMLInputElement).value).toMatch(/\(202\) 555-0123/)
   })
+
+  it("too-long number for the selected country shows an immediate error and clears once fixed", async () => {
+    const onErrorChange = vi.fn()
+    render(<PhoneInput defaultCountry="IN" onErrorChange={onErrorChange} />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    // 14 digits is TOO_LONG for IN per libphonenumber-js metadata — no blur needed.
+    await userEvent.type(input, "99999999999999")
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/too long/i)
+    expect(onErrorChange).toHaveBeenCalledWith(expect.stringMatching(/too long/i))
+
+    // Delete back down to a length that's no longer too long — error clears immediately, no blur.
+    await userEvent.type(input, "{Backspace}{Backspace}{Backspace}{Backspace}")
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    expect(onErrorChange).toHaveBeenLastCalledWith(null)
+  })
+
+  it("blur with an incomplete number shows an error; blur with a valid number shows none", async () => {
+    render(<PhoneInput defaultCountry="IN" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    await userEvent.type(input, "98765")
+    await userEvent.tab()
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/enter a valid/i)
+
+    await userEvent.click(input)
+    await userEvent.type(input, "43210")
+    await userEvent.tab()
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it("error prop displays a custom message and sets aria-invalid", () => {
+    render(<PhoneInput defaultCountry="US" error="custom" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent("custom")
+  })
+
+  it("validate prop replaces the default validator", async () => {
+    render(<PhoneInput defaultCountry="US" validate={() => "always wrong"} />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    await userEvent.type(input, "2025550123") // a fully valid US number
+    await userEvent.tab()
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent("always wrong")
+  })
 })

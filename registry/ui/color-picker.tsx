@@ -56,11 +56,16 @@ function hsvaToHex({ h, s, v, a }: Hsva): string {
   return alpha < 1 ? `${hex}${byteToHex(alpha)}` : hex
 }
 
+const DEFAULT_HEX_ERROR = "Enter a valid hex color like #3B82F6"
+
 interface Ctx {
   hsva: Hsva
   hex: string
   setHsva: (next: Hsva) => void
   disabled?: boolean
+  isInvalid: boolean
+  validate?: (value: string) => React.ReactNode | null
+  emitError: (next: React.ReactNode | null) => void
 }
 
 const ColorPickerContext = React.createContext<Ctx | null>(null)
@@ -102,12 +107,35 @@ interface ColorPickerProps
   defaultValue?: string
   onChange?: (hex: string) => void
   disabled?: boolean
+  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  error?: React.ReactNode
+  /** Replaces the default invalid-hex validator. Called on commit (blur/Enter) with the typed text. */
+  validate?: (value: string) => React.ReactNode | null
+  /** Fires when internal validation error appears/clears. */
+  onErrorChange?: (error: React.ReactNode | null) => void
+  /** Default true. False renders visuals (aria-invalid) only — consumer renders the message. */
+  showErrorMessage?: boolean
 }
 
 const DEFAULT_HEX = "#000000"
 
 const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
-  ({ value, defaultValue, onChange, disabled, className, children, ...props }, ref) => {
+  (
+    {
+      value,
+      defaultValue,
+      onChange,
+      disabled,
+      error,
+      validate,
+      onErrorChange,
+      showErrorMessage = true,
+      className,
+      children,
+      ...props
+    },
+    ref
+  ) => {
     const isControlled = value !== undefined
 
     if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
@@ -139,18 +167,41 @@ const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
     const hex = hsvaToHex(currentHsva)
 
+    const [internalError, setInternalError] = React.useState<React.ReactNode | null>(null)
+    const prevErrorRef = React.useRef<React.ReactNode | null>(null)
+    const emitError = React.useCallback(
+      (next: React.ReactNode | null) => {
+        setInternalError(next)
+        if (next !== prevErrorRef.current) {
+          prevErrorRef.current = next
+          onErrorChange?.(next)
+        }
+      },
+      [onErrorChange]
+    )
+    const displayError = error !== undefined ? error : internalError
+    const isInvalid = !!displayError
+
     const setHsva = React.useCallback(
       (next: Hsva) => {
         setHsvaState(next)
         onChange?.(hsvaToHex(next))
+        emitError(null)
       },
-      [onChange]
+      [onChange, emitError]
     )
 
     return (
-      <ColorPickerContext.Provider value={{ hsva: currentHsva, hex, setHsva, disabled }}>
+      <ColorPickerContext.Provider
+        value={{ hsva: currentHsva, hex, setHsva, disabled, isInvalid, validate, emitError }}
+      >
         <div ref={ref} className={cn("flex flex-col gap-3", className)} {...props}>
           {children}
+          {isInvalid && showErrorMessage !== false && (
+            <p role="alert" className="text-destructive mt-1.5 text-xs">
+              {displayError}
+            </p>
+          )}
         </div>
       </ColorPickerContext.Provider>
     )
@@ -343,16 +394,19 @@ const ColorPickerInput = React.forwardRef<
   HTMLInputElement,
   Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue" | "onChange">
 >(({ className, onFocus, onBlur, onKeyDown, ...props }, ref) => {
-  const { hex, setHsva, disabled } = useColorPicker()
+  const { hex, setHsva, disabled, isInvalid, validate, emitError } = useColorPicker()
   const [editing, setEditing] = React.useState(false)
   const [text, setText] = React.useState(hex)
 
   const commit = () => {
     const parsed = hexToHsva(text)
-    if (parsed) {
-      setHsva(parsed)
-    } else {
+    const customMsg = validate ? validate(text) ?? null : null
+    const msg = parsed === null ? customMsg ?? DEFAULT_HEX_ERROR : customMsg
+    if (msg) {
+      emitError(msg)
       setText(hex) // invalid input: revert, never throw
+    } else {
+      setHsva(parsed!) // also clears the error
     }
     setEditing(false)
   }
@@ -363,13 +417,21 @@ const ColorPickerInput = React.forwardRef<
       type="text"
       aria-label="Hex color"
       disabled={disabled}
+      aria-invalid={isInvalid}
       value={editing ? text : hex}
       onFocus={(e) => {
         setText(hex)
         setEditing(true)
         onFocus?.(e)
       }}
-      onChange={(e) => setText(e.target.value)}
+      onChange={(e) => {
+        // Guards against a retained-focus edge case: if the previous commit was
+        // invalid (revert set editing=false while focus never left), typing again
+        // without a fresh focus event must still switch back into edit mode, or
+        // the controlled value stays pinned to `hex` and swallows keystrokes.
+        setEditing(true)
+        setText(e.target.value)
+      }}
       onBlur={(e) => {
         commit()
         onBlur?.(e)
@@ -386,7 +448,7 @@ const ColorPickerInput = React.forwardRef<
         }
       }}
       className={cn(
-        "border-input bg-transparent focus-visible:ring-ring w-full rounded-md border px-2 py-1 font-mono text-sm shadow-xs focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50",
+        "border-input bg-transparent focus-visible:ring-ring w-full rounded-md border px-2 py-1 font-mono text-sm shadow-xs focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20",
         className
       )}
       {...props}

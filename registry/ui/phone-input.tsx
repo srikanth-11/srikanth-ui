@@ -7,6 +7,7 @@ import {
   getCountryCallingCode,
   isValidPhoneNumber,
   parsePhoneNumberFromString,
+  validatePhoneNumberLength,
   type CountryCode,
 } from "libphonenumber-js/min"
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react"
@@ -46,11 +47,33 @@ interface PhoneInputProps
   defaultCountry?: CountryCode
   onChange?: (e164: string) => void
   onCountryChange?: (country: CountryCode) => void
+  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  error?: React.ReactNode
+  /** Replaces the default validator. Called on blur with the current E.164 value. */
+  validate?: (value: string) => React.ReactNode | null
+  /** Fires when internal validation error appears/clears. */
+  onErrorChange?: (error: React.ReactNode | null) => void
+  /** Default true. False renders visuals (aria-invalid) only — consumer renders the message. */
+  showErrorMessage?: boolean
 }
 
 const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
   (
-    { value, defaultValue, defaultCountry = "US", onChange, onCountryChange, disabled, className, ...props },
+    {
+      value,
+      defaultValue,
+      defaultCountry = "US",
+      onChange,
+      onCountryChange,
+      disabled,
+      className,
+      error,
+      validate,
+      onErrorChange,
+      showErrorMessage = true,
+      onBlur,
+      ...props
+    },
     ref
   ) => {
     const [country, setCountry] = React.useState<CountryCode>(() => {
@@ -69,6 +92,19 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     })
     const [open, setOpen] = React.useState(false)
     const lastEmitted = React.useRef<string | undefined>(undefined)
+
+    const [internalError, setInternalError] = React.useState<React.ReactNode | null>(null)
+    const prevErrorRef = React.useRef<React.ReactNode | null>(null)
+    const tooLongRef = React.useRef(false)
+    const emitError = (next: React.ReactNode | null) => {
+      setInternalError(next)
+      if (next !== prevErrorRef.current) {
+        prevErrorRef.current = next
+        onErrorChange?.(next)
+      }
+    }
+    const displayError = error !== undefined ? error : internalError
+    const isInvalid = !!displayError
 
     if (process.env.NODE_ENV !== "production" && value !== undefined && !onChange) {
       console.warn("PhoneInput: `value` without `onChange` — component is read-only.")
@@ -102,6 +138,19 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       onChange?.(e164)
     }
 
+    // Too-long is the one violation that can never become valid by typing more —
+    // checked immediately per keystroke. Everything else validates on blur only.
+    const checkTooLong = (digits: string, c: CountryCode) => {
+      if (validate) return
+      if (digits && validatePhoneNumberLength(digits, c) === "TOO_LONG") {
+        tooLongRef.current = true
+        emitError(`Phone number is too long for ${countryName(c)}`)
+      } else if (tooLongRef.current) {
+        tooLongRef.current = false
+        emitError(null)
+      }
+    }
+
     const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value
       if (raw.startsWith("+")) {
@@ -114,14 +163,35 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
             onCountryChange?.(parsed.country)
           }
           emit(parsed.nationalNumber, parsed.country)
+          checkTooLong(parsed.nationalNumber, parsed.country)
           return
         }
         const cc = getCountryCallingCode(country)
-        const digits = raw.replace(/\D/g, "")
-        emit(digits.startsWith(cc) ? digits.slice(cc.length) : digits, country)
+        const rawDigits = raw.replace(/\D/g, "")
+        const nationalDigits = rawDigits.startsWith(cc) ? rawDigits.slice(cc.length) : rawDigits
+        emit(nationalDigits, country)
+        checkTooLong(nationalDigits, country)
         return
       }
-      emit(raw.replace(/\D/g, ""), country)
+      const digits = raw.replace(/\D/g, "")
+      emit(digits, country)
+      checkTooLong(digits, country)
+    }
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      const digits = national.replace(/\D/g, "")
+      const e164 = digits ? `+${getCountryCallingCode(country)}${digits}` : ""
+
+      if (validate) {
+        emitError(validate(e164) ?? null)
+      } else if (!tooLongRef.current) {
+        if (digits && !isValidPhoneNumber(e164, country)) {
+          emitError(`Enter a valid ${countryName(country)} phone number`)
+        } else {
+          emitError(null)
+        }
+      }
+      onBlur?.(e)
     }
 
     const selectCountry = (c: CountryCode) => {
@@ -132,6 +202,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     }
 
     return (
+      <>
       <div className={cn("flex items-stretch gap-2", className)}>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -182,12 +253,20 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           type="tel"
           aria-label="Phone number"
           autoComplete="tel-national"
+          aria-invalid={isInvalid}
           value={national}
           onChange={handleInput}
+          onBlur={handleBlur}
           disabled={disabled}
           {...props}
         />
       </div>
+      {isInvalid && showErrorMessage !== false && (
+        <p role="alert" className="text-destructive mt-1.5 text-xs">
+          {displayError}
+        </p>
+      )}
+      </>
     )
   }
 )

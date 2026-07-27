@@ -20,6 +20,16 @@ interface NumberInputProps
   format?: Intl.NumberFormatOptions
   locale?: string
   allowWheel?: boolean
+  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  error?: React.ReactNode
+  /** Replaces the default out-of-range validator. Called on blur with the typed value. */
+  validate?: (value: number | null) => React.ReactNode | null
+  /** Fires when internal validation error appears/clears. */
+  onErrorChange?: (error: React.ReactNode | null) => void
+  /** Default true. False renders visuals (aria-invalid) only — consumer renders the message. */
+  showErrorMessage?: boolean
+  /** Legacy behavior: clamp typed out-of-range input to [min, max] on blur instead of erroring. Default false. */
+  clampInput?: boolean
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -43,6 +53,11 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       onBlur,
       onFocus,
       onKeyDown,
+      error,
+      validate,
+      onErrorChange,
+      showErrorMessage = true,
+      clampInput = false,
       ...props
     },
     ref
@@ -55,6 +70,18 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const holdRef = React.useRef<ReturnType<typeof setInterval> | null>(null)
     const inputRef = React.useRef<HTMLInputElement | null>(null)
     React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement)
+
+    const [internalError, setInternalError] = React.useState<React.ReactNode | null>(null)
+    const prevErrorRef = React.useRef<React.ReactNode | null>(null)
+    const emitError = (next: React.ReactNode | null) => {
+      setInternalError(next)
+      if (next !== prevErrorRef.current) {
+        prevErrorRef.current = next
+        onErrorChange?.(next)
+      }
+    }
+    const displayError = error !== undefined ? error : internalError
+    const isInvalid = !!displayError
 
     if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
       console.warn("NumberInput: `value` without `onChange` — component is read-only.")
@@ -117,11 +144,32 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         : formatter.format(current)
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      setEditing(false)
       // ponytail: naive parse (strips , as thousands sep) — breaks comma-decimal locales; swap for Intl-aware parser if reported
       const cleaned = text.replace(/[^\d.,-]/g, "").replace(/,/g, "")
       const parsed = cleaned === "" || cleaned === "-" ? null : Number(cleaned)
-      commit(parsed === null || Number.isNaN(parsed) ? null : parsed)
+      const numeric = parsed === null || Number.isNaN(parsed) ? null : parsed
+
+      if (validate) {
+        const msg = validate(numeric) ?? null
+        emitError(msg)
+        if (!msg) {
+          setEditing(false)
+          commit(numeric)
+        }
+        onBlur?.(e)
+        return
+      }
+
+      const outOfRange = numeric !== null && (numeric < min || numeric > max)
+      if (outOfRange && !clampInput) {
+        emitError(`Enter a number between ${formatter.format(min)} and ${formatter.format(max)}`)
+        onBlur?.(e)
+        return
+      }
+
+      emitError(null)
+      setEditing(false)
+      commit(numeric)
       onBlur?.(e)
     }
 
@@ -129,6 +177,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const increaseDisabled = disabled || (current !== null && current !== undefined && current >= max)
 
     return (
+      <>
       <div className={cn("flex items-stretch gap-1", className)}>
         <Button
           type="button"
@@ -151,11 +200,16 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           aria-valuenow={current ?? undefined}
           aria-valuemin={min === Number.MIN_SAFE_INTEGER ? undefined : min}
           aria-valuemax={max === Number.MAX_SAFE_INTEGER ? undefined : max}
+          aria-invalid={isInvalid}
           value={display}
           disabled={disabled}
           onFocus={(e) => {
             setEditing(true)
-            setText(current === null || current === undefined ? "" : String(current))
+            // Preserve the user's unresolved invalid text so they can fix it — only
+            // reset from the committed value when there's no pending blur error.
+            if (!internalError) {
+              setText(current === null || current === undefined ? "" : String(current))
+            }
             onFocus?.(e)
           }}
           onChange={(e) => setText(e.target.value)}
@@ -183,6 +237,12 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           <PlusIcon className="size-4" />
         </Button>
       </div>
+      {isInvalid && showErrorMessage !== false && (
+        <p role="alert" className="text-destructive mt-1.5 text-xs">
+          {displayError}
+        </p>
+      )}
+      </>
     )
   }
 )

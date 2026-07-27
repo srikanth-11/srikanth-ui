@@ -76,4 +76,26 @@ describe("TimePicker", () => {
     await userEvent.type(input, "{ArrowUp}")
     expect(input).toHaveValue("09")
   })
+
+  it("error prop sets aria-invalid on all segments and renders an alert", () => {
+    render(
+      <TimePicker value={at(9, 30)} onChange={() => {}} error="Required">
+        <TimePickerInput unit="hours" />
+        <TimePickerInput unit="minutes" />
+      </TimePicker>
+    )
+    expect(screen.getByLabelText("Hours")).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByLabelText("Minutes")).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent("Required")
+  })
+
+  it("no error by default", () => {
+    render(
+      <TimePicker value={at(9, 30)} onChange={() => {}}>
+        <TimePickerInput unit="hours" />
+      </TimePicker>
+    )
+    expect(screen.getByLabelText("Hours")).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
 })

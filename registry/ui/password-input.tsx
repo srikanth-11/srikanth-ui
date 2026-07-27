@@ -6,35 +6,72 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-const PasswordInput = React.forwardRef<
-  HTMLInputElement,
-  Omit<React.ComponentProps<typeof Input>, "type">
->(({ className, disabled, ...props }, ref) => {
-  const [visible, setVisible] = React.useState(false)
-  return (
-    <div className="relative">
-      <Input
-        ref={ref}
-        type={visible ? "text" : "password"}
-        disabled={disabled}
-        className={cn("pe-10", className)}
-        {...props}
-      />
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={visible ? "Hide password" : "Show password"}
-        aria-pressed={visible}
-        disabled={disabled}
-        onClick={() => setVisible((v) => !v)}
-        className="text-muted-foreground absolute end-0 top-0 h-full w-10 hover:bg-transparent"
-      >
-        {visible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
-      </Button>
-    </div>
-  )
-})
+interface PasswordInputProps extends Omit<React.ComponentProps<typeof Input>, "type"> {
+  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  error?: React.ReactNode
+  /** No default policy (app-specific) — called on blur with the current value. */
+  validate?: (value: string) => React.ReactNode | null
+  /** Fires when internal validation error appears/clears. */
+  onErrorChange?: (error: React.ReactNode | null) => void
+  /** Default true. False renders visuals (aria-invalid) only — consumer renders the message. */
+  showErrorMessage?: boolean
+}
+
+const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
+  ({ className, disabled, error, validate, onErrorChange, showErrorMessage = true, onBlur, ...props }, ref) => {
+    const [visible, setVisible] = React.useState(false)
+
+    const [internalError, setInternalError] = React.useState<React.ReactNode | null>(null)
+    const prevErrorRef = React.useRef<React.ReactNode | null>(null)
+    const emitError = (next: React.ReactNode | null) => {
+      setInternalError(next)
+      if (next !== prevErrorRef.current) {
+        prevErrorRef.current = next
+        onErrorChange?.(next)
+      }
+    }
+    const displayError = error !== undefined ? error : internalError
+    const isInvalid = !!displayError
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      if (validate) emitError(validate(e.target.value) ?? null)
+      onBlur?.(e)
+    }
+
+    return (
+      <div className="flex flex-col gap-1.5">
+        <div className="relative">
+          <Input
+            ref={ref}
+            type={visible ? "text" : "password"}
+            disabled={disabled}
+            aria-invalid={isInvalid}
+            className={cn("pe-10", className)}
+            onBlur={handleBlur}
+            {...props}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={visible ? "Hide password" : "Show password"}
+            aria-pressed={visible}
+            disabled={disabled}
+            onClick={() => setVisible((v) => !v)}
+            className="text-muted-foreground absolute end-0 top-0 h-full w-10 hover:bg-transparent"
+          >
+            {visible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
+          </Button>
+        </div>
+        {isInvalid && showErrorMessage !== false && (
+          <p role="alert" className="text-destructive mt-1.5 text-xs">
+            {displayError}
+          </p>
+        )}
+      </div>
+    )
+  }
+)
 PasswordInput.displayName = "PasswordInput"
 
 export interface PasswordRule {

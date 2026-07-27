@@ -37,6 +37,13 @@
       "files": [{ "path": "registry/ui/number-input.tsx", "type": "registry:ui" }],
       "dependencies": ["lucide-react"],
       "registryDependencies": ["button", "input"]
+    },
+    {
+      "name": "color-picker",
+      "type": "registry:ui",
+      "title": "Color Picker",
+      "description": "Composable HSV color picker with saturation/value pad, hue and alpha sliders, hex input, and swatches.",
+      "files": [{ "path": "registry/ui/color-picker.tsx", "type": "registry:ui" }]
     }
   ]
 }

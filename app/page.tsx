@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { registryMeta } from "@/lib/registry-meta"
+import { registryMeta, SITE_URL } from "@/lib/registry-meta"
 
 export default function Home() {
   return (
@@ -10,8 +10,11 @@ export default function Home() {
           The components shadcn/ui doesn&apos;t ship. Install with the shadcn CLI, own the code.
         </p>
         <code className="bg-card mt-6 inline-block rounded-lg border px-4 py-2 font-mono text-sm">
-          npx shadcn@latest add @srikanth/time-picker
+          npx shadcn@latest add {SITE_URL}/r/time-picker.json
         </code>
+        <p className="text-muted-foreground mt-2 text-sm">
+          Or configure the @srikanth namespace once — see README.
+        </p>
       </section>
       <section className="grid gap-6 sm:grid-cols-2">
         {registryMeta.map(({ name, title, description, Demo }) => (

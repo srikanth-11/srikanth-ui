@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# srikanth/ui
 
-## Getting Started
+The components shadcn/ui doesn't ship. Install with the shadcn CLI — you own the code.
 
-First, run the development server:
+**Docs & demos:** https://srikanth-ui.vercel.app
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Components
+
+| Component | Install |
+|---|---|
+| Time Picker | `npx shadcn@latest add https://srikanth-ui.vercel.app/r/time-picker.json` |
+| Phone Input | `npx shadcn@latest add https://srikanth-ui.vercel.app/r/phone-input.json` |
+| Password Input | `npx shadcn@latest add https://srikanth-ui.vercel.app/r/password-input.json` |
+| Number Input | `npx shadcn@latest add https://srikanth-ui.vercel.app/r/number-input.json` |
+
+Or add the namespace once to `components.json`:
+
+```json
+{ "registries": { "@srikanth": { "url": "https://srikanth-ui.vercel.app/r/{name}.json" } } }
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then: `npx shadcn@latest add @srikanth/time-picker`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Principles
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Same bar as official shadcn components: keyboard accessible, ARIA correct, themable via CSS variables, RTL-safe.
+- Zero dependencies unless reinventing is folly (phone parsing uses libphonenumber-js).
+- Controlled + uncontrolled. Form-ready.
 
-## Learn More
+## Development
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm i
+npm run dev            # docs site
+npm run test           # vitest
+npm run registry:build # rebuild public/r/*.json
+```

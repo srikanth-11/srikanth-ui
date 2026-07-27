@@ -51,8 +51,13 @@ function getStoredConsent(
     if (!raw) return null
     const parsed = JSON.parse(raw)
     if (parsed?.version !== version) return null
-    if (typeof parsed.consent !== "object" || parsed.consent === null) return null
-    return parsed.consent as Consent
+    // Anything hand-edited or written by another library is untrusted:
+    // require a plain object of booleans rather than trusting `typeof "object"`,
+    // which also admits arrays and null.
+    const consent = parsed.consent
+    if (typeof consent !== "object" || consent === null || Array.isArray(consent)) return null
+    if (!Object.values(consent).every((v) => typeof v === "boolean")) return null
+    return consent as Consent
   } catch {
     return null
   }
@@ -98,15 +103,26 @@ function CookieConsent({
     latest.current = { categories, onConsent }
   })
 
+  // Which (storageKey, version) pair has already been replayed to `onConsent`.
+  // StrictMode's dev double-mount re-runs the effect with the same pair, and
+  // consumers wire this to one-shot side effects like initGA() — so replay is
+  // keyed on the pair rather than a bare "did it once" flag, which would also
+  // swallow the legitimate replay after a genuine storageKey/version change.
+  const replayed = React.useRef<string | null>(null)
+
   // Storage is read here and never during render: the server has no storage, so
   // a render-time read would hydrate-mismatch. The banner starts hidden and
   // appears once the client confirms there is no valid consent — the one extra
   // render this costs is the point of the pattern, hence the rule exemption.
   React.useEffect(() => {
     const stored = getStoredConsent(storageKey, version)
-    if (stored) latest.current.onConsent?.(normalize(latest.current.categories, stored))
+    const stamp = JSON.stringify([storageKey, version])
+    if (stored && replayed.current !== stamp) {
+      replayed.current = stamp
+      latest.current.onConsent?.(normalize(latest.current.categories, stored))
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is a client-only external store; reading it during render breaks hydration
-    else setVisible(true)
+    setVisible(!stored)
   }, [storageKey, version])
 
   const commit = (consent: Consent) => {
@@ -156,7 +172,10 @@ function CookieConsent({
                 variant="ghost"
                 className="sm:me-auto"
                 onClick={() => {
-                  setDraft(normalize(categories, getStoredConsent(storageKey, version) ?? {}))
+                  // The banner only renders when there is no valid stored
+                  // consent, so the draft always starts from the defaults:
+                  // required on, everything else off.
+                  setDraft(normalize(categories, {}))
                   setOpen(true)
                 }}
               >

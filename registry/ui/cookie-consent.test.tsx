@@ -1,3 +1,4 @@
+import * as React from "react"
 import { fireEvent, render, screen } from "@testing-library/react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -123,6 +124,43 @@ describe("CookieConsent", () => {
     expect(banner()).not.toBeInTheDocument()
   })
 
+  it("replays stored consent only once under StrictMode", () => {
+    seed({ analytics: true })
+    const onConsent = vi.fn()
+
+    render(
+      <React.StrictMode>
+        <CookieConsent categories={CATEGORIES} onConsent={onConsent} />
+      </React.StrictMode>
+    )
+
+    expect(onConsent).toHaveBeenCalledTimes(1)
+    expect(banner()).not.toBeInTheDocument()
+  })
+
+  it("hides the banner when a prop change points at stored consent", () => {
+    localStorage.setItem(
+      "ck",
+      JSON.stringify({ version: 1, timestamp: 1, consent: { analytics: true } })
+    )
+    const onConsent = vi.fn()
+    const { rerender } = render(
+      <CookieConsent categories={CATEGORIES} onConsent={onConsent} />
+    )
+    expect(banner()).toBeInTheDocument()
+
+    rerender(
+      <CookieConsent categories={CATEGORIES} onConsent={onConsent} storageKey="ck" />
+    )
+
+    expect(banner()).not.toBeInTheDocument()
+    expect(onConsent).toHaveBeenCalledWith({
+      necessary: true,
+      analytics: true,
+      marketing: false,
+    })
+  })
+
   it("re-prompts when the consent version is bumped", () => {
     seed({ analytics: true }, 1)
     const onConsent = vi.fn()
@@ -203,6 +241,29 @@ describe("getStoredConsent", () => {
     localStorage.setItem(KEY, JSON.stringify({ version: 1, timestamp: 1 }))
     expect(getStoredConsent()).toBeNull()
     localStorage.setItem(KEY, JSON.stringify("nope"))
+    expect(getStoredConsent()).toBeNull()
+  })
+
+  it("returns null when consent is an array or holds non-boolean values", () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: 1, timestamp: 1, consent: [] }))
+    expect(getStoredConsent()).toBeNull()
+
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ version: 1, timestamp: 1, consent: ["analytics"] })
+    )
+    expect(getStoredConsent()).toBeNull()
+
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ version: 1, timestamp: 1, consent: { analytics: "yes" } })
+    )
+    expect(getStoredConsent()).toBeNull()
+
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ version: 1, timestamp: 1, consent: { analytics: null } })
+    )
     expect(getStoredConsent()).toBeNull()
   })
 

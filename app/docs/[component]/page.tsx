@@ -21,7 +21,7 @@ export default async function ComponentPage({
   const { component } = await params
   const meta = registryMeta.find((c) => c.name === component)
   if (!meta) notFound()
-  const { title, description, Demo, name } = meta
+  const { title, description, Demo, InvalidDemo, name } = meta
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
@@ -30,6 +30,14 @@ export default async function ComponentPage({
       <div className="bg-card mt-8 flex min-h-48 items-center justify-center rounded-xl border p-8">
         <Demo />
       </div>
+      {InvalidDemo && (
+        <>
+          <h2 className="mt-10 mb-3 text-lg font-medium">Invalid state</h2>
+          <div className="bg-card flex min-h-32 items-center justify-center rounded-xl border p-8">
+            <InvalidDemo />
+          </div>
+        </>
+      )}
       <h2 className="mt-10 mb-3 text-lg font-medium">Installation</h2>
       <InstallCommand name={name} />
       <h2 className="mt-10 mb-3 text-lg font-medium">Open in v0</h2>

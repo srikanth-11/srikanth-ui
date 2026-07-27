@@ -74,4 +74,87 @@ describe("PhoneInput", () => {
     await userEvent.type(input, "5550123")
     expect((input as HTMLInputElement).value).toMatch(/\(202\) 555-0123/)
   })
+
+  it("typing past a previously-valid IN number shows an immediate too-long error, which clears once fixed", async () => {
+    const onErrorChange = vi.fn()
+    render(<PhoneInput defaultCountry="IN" onErrorChange={onErrorChange} />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+
+    // 10 digits is a complete, valid IN number — no error, no blur needed.
+    await userEvent.type(input, "9876543210")
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+
+    // 11th digit: was valid, appending made it invalid — immediate too-long error.
+    await userEvent.type(input, "9")
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/too long/i)
+    expect(onErrorChange).toHaveBeenCalledWith(expect.stringMatching(/too long/i))
+
+    // Delete back down to the valid 10-digit number — clears immediately, no blur.
+    await userEvent.type(input, "{Backspace}")
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    expect(onErrorChange).toHaveBeenLastCalledWith(null)
+  })
+
+  it("TOO_LONG-length numbers (14+ digits for IN) also trigger the immediate error", async () => {
+    render(<PhoneInput defaultCountry="IN" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    // 14 digits is TOO_LONG for IN per libphonenumber-js metadata, independent of
+    // whether a shorter prefix was ever valid.
+    await userEvent.type(input, "99999999999999")
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/too long/i)
+  })
+
+  it("blur with an incomplete number shows an error; blur with a valid number shows none", async () => {
+    render(<PhoneInput defaultCountry="IN" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    await userEvent.type(input, "98765")
+    await userEvent.tab()
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/enter a valid/i)
+
+    await userEvent.click(input)
+    await userEvent.type(input, "43210")
+    await userEvent.tab()
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it("switching country drops the previous country's too-long error", async () => {
+    render(<PhoneInput defaultCountry="IN" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    await userEvent.type(input, "98765432109") // 11 digits: too long for IN
+    expect(screen.getByRole("alert")).toHaveTextContent(/too long for India/i)
+
+    await userEvent.click(screen.getByRole("combobox", { name: /select country/i }))
+    await userEvent.type(screen.getByPlaceholderText(/search country/i), "United States")
+    await userEvent.click(await screen.findByText("United States"))
+
+    // Re-evaluated for the new country — whatever shows must not mention India.
+    expect(screen.queryByText(/India/i)).not.toBeInTheDocument()
+
+    // And blur is no longer wedged by the stale too-long flag.
+    await userEvent.click(input)
+    await userEvent.tab()
+    expect(screen.queryByText(/India/i)).not.toBeInTheDocument()
+  })
+
+  it("error prop displays a custom message and sets aria-invalid", () => {
+    render(<PhoneInput defaultCountry="US" error="custom" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent("custom")
+  })
+
+  it("validate prop replaces the default validator", async () => {
+    render(<PhoneInput defaultCountry="US" validate={() => "always wrong"} />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    await userEvent.type(input, "2025550123") // a fully valid US number
+    await userEvent.tab()
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent("always wrong")
+  })
 })

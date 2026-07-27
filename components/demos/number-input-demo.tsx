@@ -19,3 +19,19 @@ export function NumberInputDemo() {
     </div>
   )
 }
+
+export function NumberInputInvalidDemo() {
+  // Type a value outside [0, 100] and blur to see this live — it errors
+  // instead of silently clamping, and keeps what you typed so you can fix it.
+  return (
+    <div className="w-full max-w-[220px]">
+      <NumberInput
+        defaultValue={250}
+        min={0}
+        max={100}
+        error="Enter a number between 0 and 100"
+        aria-label="Quantity"
+      />
+    </div>
+  )
+}

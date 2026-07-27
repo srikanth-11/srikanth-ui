@@ -10,6 +10,7 @@ interface Ctx {
   date: Date
   setDate: (d: Date) => void
   hourCycle: 12 | 24
+  isInvalid: boolean
 }
 
 const TimePickerContext = React.createContext<Ctx | null>(null)
@@ -52,15 +53,23 @@ interface TimePickerProps
   defaultValue?: Date
   onChange?: (date: Date) => void
   hourCycle?: 12 | 24
+  /** External error; truthy = invalid. Segments cannot produce invalid times themselves. */
+  error?: React.ReactNode
+  /** Default true. False renders visuals (aria-invalid) only — consumer renders the message. */
+  showErrorMessage?: boolean
 }
 
 const TimePicker = React.forwardRef<HTMLDivElement, TimePickerProps>(
-  ({ value, defaultValue, onChange, hourCycle = 24, className, children, ...props }, ref) => {
+  (
+    { value, defaultValue, onChange, hourCycle = 24, error, showErrorMessage = true, className, children, ...props },
+    ref
+  ) => {
     const [internal, setInternal] = React.useState<Date>(
       () => defaultValue ?? new Date(new Date().setHours(0, 0, 0, 0))
     )
     const isControlled = value !== undefined
     const date = isControlled ? value : internal
+    const isInvalid = !!error
 
     if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
       console.warn("TimePicker: `value` without `onChange` — component is read-only.")
@@ -75,10 +84,15 @@ const TimePicker = React.forwardRef<HTMLDivElement, TimePickerProps>(
     )
 
     return (
-      <TimePickerContext.Provider value={{ date, setDate, hourCycle }}>
+      <TimePickerContext.Provider value={{ date, setDate, hourCycle, isInvalid }}>
         <div ref={ref} role="group" className={cn("flex items-center gap-1", className)} {...props}>
           {children}
         </div>
+        {isInvalid && showErrorMessage !== false && (
+          <p role="alert" className="text-destructive mt-1.5 text-xs">
+            {error}
+          </p>
+        )}
       </TimePickerContext.Provider>
     )
   }
@@ -94,7 +108,7 @@ interface TimePickerInputProps
 
 const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>(
   ({ unit, className, onKeyDown, ...props }, ref) => {
-    const { date, setDate, hourCycle } = useTimePicker()
+    const { date, setDate, hourCycle, isInvalid } = useTimePicker()
     const buffer = React.useRef<string>("")
     const display = String(getUnit(date, unit, hourCycle)).padStart(2, "0")
     const max = unit === "hours" ? (hourCycle === 12 ? 12 : 23) : 59
@@ -134,12 +148,13 @@ const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>
         aria-valuenow={getUnit(date, unit, hourCycle)}
         aria-valuemin={unit === "hours" ? (hourCycle === 12 ? 1 : 0) : 0}
         aria-valuemax={max}
+        aria-invalid={isInvalid}
         value={display}
         onChange={() => {}}
         onKeyDown={handleKeyDown}
         onBlur={() => (buffer.current = "")}
         className={cn(
-          "border-input bg-transparent focus-visible:ring-ring w-11 rounded-md border px-2 py-1 text-center font-mono text-sm tabular-nums shadow-xs focus-visible:ring-2 focus-visible:outline-none",
+          "border-input bg-transparent focus-visible:ring-ring w-11 rounded-md border px-2 py-1 text-center font-mono text-sm tabular-nums shadow-xs focus-visible:ring-2 focus-visible:outline-none aria-invalid:border-destructive aria-invalid:ring-destructive/20",
           className
         )}
         {...props}
@@ -153,7 +168,7 @@ const TimePickerPeriod = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
 >(({ className, ...props }, ref) => {
-  const { date, setDate, hourCycle } = useTimePicker()
+  const { date, setDate, hourCycle, isInvalid } = useTimePicker()
   if (hourCycle !== 12) return null
   const pm = date.getHours() >= 12
   const toggle = () => {
@@ -168,6 +183,7 @@ const TimePickerPeriod = React.forwardRef<
       variant="outline"
       size="sm"
       aria-label={pm ? "PM, toggle to AM" : "AM, toggle to PM"}
+      aria-invalid={isInvalid}
       onClick={toggle}
       className={cn("w-12 font-mono", className)}
       {...props}

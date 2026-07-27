@@ -81,6 +81,9 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
       []
     )
 
+    // ponytail: full replay of every stroke per frame + a getComputedStyle per
+    // redraw — fine for signatures (hundreds of points), cache stroke bitmaps if
+    // pads ever exceed ~10k points.
     const redraw = React.useCallback(() => {
       const canvas = canvasRef.current
       const ctx = canvas?.getContext("2d")
@@ -98,7 +101,9 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
       ctx.lineCap = "round"
       ctx.lineJoin = "round"
       // Canvas 2D can't resolve "currentColor" — read the inherited text color so
-      // the default pen follows the theme (and flips in dark mode).
+      // the default pen follows the theme. Resolved per redraw, so a theme flip
+      // only reaches already-painted pixels on the next redraw; until then the
+      // existing drawing keeps the old color and only new strokes use the new one.
       const pen = penColor || getComputedStyle(canvas).color || "#000"
       ctx.strokeStyle = pen
       ctx.fillStyle = pen
@@ -171,6 +176,8 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (disabled || current.current) return
+      // Right/middle mouse buttons open menus, they don't draw.
+      if (e.pointerType === "mouse" && e.button !== 0) return
       e.currentTarget.setPointerCapture?.(e.pointerId)
       activeId.current = e.pointerId
       current.current = [pointFrom(e)]

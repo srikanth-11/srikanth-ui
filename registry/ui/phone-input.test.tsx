@@ -123,6 +123,25 @@ describe("PhoneInput", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
+  it("switching country drops the previous country's too-long error", async () => {
+    render(<PhoneInput defaultCountry="IN" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    await userEvent.type(input, "98765432109") // 11 digits: too long for IN
+    expect(screen.getByRole("alert")).toHaveTextContent(/too long for India/i)
+
+    await userEvent.click(screen.getByRole("combobox", { name: /select country/i }))
+    await userEvent.type(screen.getByPlaceholderText(/search country/i), "United States")
+    await userEvent.click(await screen.findByText("United States"))
+
+    // Re-evaluated for the new country — whatever shows must not mention India.
+    expect(screen.queryByText(/India/i)).not.toBeInTheDocument()
+
+    // And blur is no longer wedged by the stale too-long flag.
+    await userEvent.click(input)
+    await userEvent.tab()
+    expect(screen.queryByText(/India/i)).not.toBeInTheDocument()
+  })
+
   it("error prop displays a custom message and sets aria-invalid", () => {
     render(<PhoneInput defaultCountry="US" error="custom" />)
     const input = screen.getByRole("textbox", { name: /phone number/i })

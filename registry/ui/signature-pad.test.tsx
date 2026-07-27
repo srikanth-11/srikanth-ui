@@ -156,6 +156,17 @@ describe("SignaturePad", () => {
     expect(ref.current!.isEmpty()).toBe(false)
   })
 
+  it("right-click does not draw", () => {
+    const onEnd = vi.fn()
+    const { ref, canvas } = setup({ onEnd })
+    const mouse = { pointerId: 1, pointerType: "mouse" }
+    fireEvent.pointerDown(canvas, { ...mouse, button: 2, buttons: 2, clientX: 10, clientY: 10 })
+    fireEvent.pointerMove(canvas, { ...mouse, buttons: 2, clientX: 40, clientY: 40 })
+    fireEvent.pointerUp(canvas, { ...mouse, clientX: 40, clientY: 40 })
+    expect(onEnd).not.toHaveBeenCalled()
+    expect(ref.current!.isEmpty()).toBe(true)
+  })
+
   it("disabling mid-stroke abandons the stroke and leaves the pad usable after re-enabling", () => {
     const onEnd = vi.fn()
     const ref = React.createRef<SignaturePadHandle>()

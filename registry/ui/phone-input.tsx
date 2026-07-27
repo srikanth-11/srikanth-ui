@@ -217,7 +217,16 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       setCountry(c)
       setOpen(false)
       onCountryChange?.(c)
-      emit(national.replace(/\D/g, ""), c)
+      const digits = national.replace(/\D/g, "")
+      emit(digits, c)
+      // Every internal error names the country ("too long for India"), and the
+      // length refs are metadata for the country that just went away. Drop both
+      // and re-check for the new one — handleBlur skips revalidation while
+      // tooLongRef is set, so a stale error would otherwise stick forever.
+      tooLongRef.current = false
+      lastValidLengthRef.current = null
+      emitError(null)
+      checkTooLong(digits, c)
     }
 
     return (

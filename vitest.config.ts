@@ -9,5 +9,8 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     include: ["registry/**/*.test.tsx"],
     passWithNoTests: true,
+    // userEvent types character-by-character; the phone-input suite is ~3.6s on an
+    // idle machine and blows the 5s default under CPU contention. Not async flake.
+    testTimeout: 15_000,
   },
 })

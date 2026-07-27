@@ -51,6 +51,15 @@
       "title": "Signature Pad",
       "description": "Canvas signature capture with pointer/touch/pen drawing, stroke-level undo, DPR-aware resize, and hidden form input.",
       "files": [{ "path": "registry/ui/signature-pad.tsx", "type": "registry:ui" }]
+    },
+    {
+      "name": "image-cropper",
+      "type": "registry:ui",
+      "title": "Image Cropper",
+      "description": "Themed image cropper with zoom and optional rotation sliders, plus a canvas crop helper that returns a Blob.",
+      "files": [{ "path": "registry/ui/image-cropper.tsx", "type": "registry:ui" }],
+      "dependencies": ["react-easy-crop"],
+      "registryDependencies": ["slider", "label"]
     }
   ]
 }

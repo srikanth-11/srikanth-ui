@@ -96,6 +96,11 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const [internalError, setInternalError] = React.useState<React.ReactNode | null>(null)
     const prevErrorRef = React.useRef<React.ReactNode | null>(null)
     const tooLongRef = React.useRef(false)
+    // Digit count at which the number was last known valid. libphonenumber-js/min's
+    // TOO_LONG check only fires well past most countries' real max length (e.g. 14+
+    // digits for IN, whose numbers are 10) — the more useful "too long" signal is
+    // "this was a complete, valid number, and typing more broke it."
+    const lastValidLengthRef = React.useRef<number | null>(null)
     const emitError = (next: React.ReactNode | null) => {
       setInternalError(next)
       if (next !== prevErrorRef.current) {
@@ -142,7 +147,21 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     // checked immediately per keystroke. Everything else validates on blur only.
     const checkTooLong = (digits: string, c: CountryCode) => {
       if (validate) return
-      if (digits && validatePhoneNumberLength(digits, c) === "TOO_LONG") {
+      const e164 = digits ? `+${getCountryCallingCode(c)}${digits}` : ""
+
+      if (digits && isValidPhoneNumber(e164, c)) {
+        lastValidLengthRef.current = digits.length
+        if (tooLongRef.current) {
+          tooLongRef.current = false
+          emitError(null)
+        }
+        return
+      }
+
+      const tooLongByLength = !!digits && validatePhoneNumberLength(digits, c) === "TOO_LONG"
+      const grewPastValid = lastValidLengthRef.current !== null && digits.length > lastValidLengthRef.current
+
+      if (tooLongByLength || grewPastValid) {
         tooLongRef.current = true
         emitError(`Phone number is too long for ${countryName(c)}`)
       } else if (tooLongRef.current) {

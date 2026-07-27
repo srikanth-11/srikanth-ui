@@ -86,7 +86,7 @@ describe("ColorPicker", () => {
     expect(onChange.mock.calls[0][0]).not.toBe("#808080")
   })
 
-  it("ColorPickerInput: invalid hex reverts on blur without calling onChange", async () => {
+  it("ColorPickerInput: invalid hex on blur keeps the typed text and shows an error, without calling onChange", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
@@ -99,7 +99,9 @@ describe("ColorPicker", () => {
     await user.type(input, "zzz")
     await user.tab()
     expect(onChange).not.toHaveBeenCalled()
-    expect(input).toHaveValue("#ff0000")
+    expect(input).toHaveValue("zzz")
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/enter a valid hex color/i)
   })
 
   it("ColorPickerInput: valid hex + Enter commits via onChange", async () => {
@@ -130,7 +132,7 @@ describe("ColorPicker", () => {
     expect(onChange).toHaveBeenCalledWith("#22c55e")
   })
 
-  it("invalid hex commit shows an error message and keeps the previous valid value", async () => {
+  it("invalid hex commit keeps the typed text and shows an error", async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
@@ -142,9 +144,30 @@ describe("ColorPicker", () => {
     await user.clear(input)
     await user.type(input, "zzz{Enter}")
     expect(onChange).not.toHaveBeenCalled()
-    expect(input).toHaveValue("#ff0000")
+    expect(input).toHaveValue("zzz")
     expect(input).toHaveAttribute("aria-invalid", "true")
     expect(screen.getByRole("alert")).toHaveTextContent(/enter a valid hex color/i)
+  })
+
+  it("swatch click while the hex field has a pending error clears the error and resyncs the field", async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ColorPicker value="#ff0000" onChange={onChange}>
+        <ColorPickerInput />
+        <ColorPickerSwatches swatches={["#22c55e"]} />
+      </ColorPicker>
+    )
+    const input = screen.getByRole("textbox", { name: "Hex color" }) as HTMLInputElement
+    await user.clear(input)
+    await user.type(input, "zzz{Enter}")
+    expect(screen.getByRole("alert")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "#22c55e" }))
+    expect(onChange).toHaveBeenCalledWith("#22c55e")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(input).toHaveValue("#22c55e")
   })
 
   it("fixing the hex and committing clears the error", async () => {

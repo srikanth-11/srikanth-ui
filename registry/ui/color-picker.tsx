@@ -398,17 +398,31 @@ const ColorPickerInput = React.forwardRef<
   const [editing, setEditing] = React.useState(false)
   const [text, setText] = React.useState(hex)
 
+  // A color change from outside this field (slider drag, swatch click, controlled
+  // `value` prop) resolves any pending invalid text here — drop back to displaying
+  // the canonical hex instead of leaving stale garbled text on screen. Adjusted
+  // during render (React's documented "adjust state on prop change" pattern), not
+  // a useEffect — same precedent as ColorPicker's own `syncedValue` sync above;
+  // this project's eslint-plugin-react-hooks rejects synchronous setState in effects.
+  const [syncedHex, setSyncedHex] = React.useState(hex)
+  let currentlyEditing = editing
+  if (hex !== syncedHex) {
+    setSyncedHex(hex)
+    currentlyEditing = false
+    setEditing(false)
+  }
+
   const commit = () => {
     const parsed = hexToHsva(text)
     const customMsg = validate ? validate(text) ?? null : null
     const msg = parsed === null ? customMsg ?? DEFAULT_HEX_ERROR : customMsg
     if (msg) {
+      // invalid input: keep what the user typed on screen so they can fix it,
+      // never throw — the render-time sync above exits edit mode once it resolves
       emitError(msg)
-      setText(hex) // invalid input: revert, never throw
     } else {
-      setHsva(parsed!) // also clears the error
+      setHsva(parsed!) // updates hex, clears the error, and (via the sync above) exits editing
     }
-    setEditing(false)
   }
 
   return (
@@ -418,7 +432,7 @@ const ColorPickerInput = React.forwardRef<
       aria-label="Hex color"
       disabled={disabled}
       aria-invalid={isInvalid}
-      value={editing ? text : hex}
+      value={currentlyEditing ? text : hex}
       onFocus={(e) => {
         setText(hex)
         setEditing(true)

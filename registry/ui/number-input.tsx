@@ -92,10 +92,17 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       [locale, format]
     )
 
-    const commit = (n: number | null) => {
-      const next = n === null ? null : clamp(n, min, max)
+    // Single shared exit point for every path that resolves to a value: steppers,
+    // arrow keys, and blur. Always clears the error/edit state here — a stale error
+    // and stale display text (from a prior invalid blur) must not survive any
+    // subsequent path that produces a resolved value.
+    const commit = (n: number | null, opts?: { clamp?: boolean }) => {
+      const shouldClamp = opts?.clamp !== false
+      const next = n === null || !shouldClamp ? n : clamp(n, min, max)
       if (!isControlled) setInternal(next)
       onChange?.(next)
+      setEditing(false)
+      emitError(null)
       return next
     }
 
@@ -150,11 +157,13 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       const numeric = parsed === null || Number.isNaN(parsed) ? null : parsed
 
       if (validate) {
+        // validate REPLACES the default validator entirely — including its clamp.
+        // An approved value commits exactly as typed, out-of-range or not.
         const msg = validate(numeric) ?? null
-        emitError(msg)
-        if (!msg) {
-          setEditing(false)
-          commit(numeric)
+        if (msg) {
+          emitError(msg)
+        } else {
+          commit(numeric, { clamp: false })
         }
         onBlur?.(e)
         return
@@ -167,8 +176,6 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         return
       }
 
-      emitError(null)
-      setEditing(false)
       commit(numeric)
       onBlur?.(e)
     }
@@ -217,8 +224,8 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           onKeyDown={(e) => {
             onKeyDown?.(e)
             if (e.defaultPrevented) return
-            if (e.key === "ArrowUp") { e.preventDefault(); stepBy(1); setEditing(false) }
-            if (e.key === "ArrowDown") { e.preventDefault(); stepBy(-1); setEditing(false) }
+            if (e.key === "ArrowUp") { e.preventDefault(); stepBy(1) }
+            if (e.key === "ArrowDown") { e.preventDefault(); stepBy(-1) }
           }}
           className="text-center tabular-nums"
           {...props}

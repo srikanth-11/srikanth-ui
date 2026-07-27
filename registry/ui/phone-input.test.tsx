@@ -75,21 +75,37 @@ describe("PhoneInput", () => {
     expect((input as HTMLInputElement).value).toMatch(/\(202\) 555-0123/)
   })
 
-  it("too-long number for the selected country shows an immediate error and clears once fixed", async () => {
+  it("typing past a previously-valid IN number shows an immediate too-long error, which clears once fixed", async () => {
     const onErrorChange = vi.fn()
     render(<PhoneInput defaultCountry="IN" onErrorChange={onErrorChange} />)
     const input = screen.getByRole("textbox", { name: /phone number/i })
-    // 14 digits is TOO_LONG for IN per libphonenumber-js metadata — no blur needed.
-    await userEvent.type(input, "99999999999999")
+
+    // 10 digits is a complete, valid IN number — no error, no blur needed.
+    await userEvent.type(input, "9876543210")
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+
+    // 11th digit: was valid, appending made it invalid — immediate too-long error.
+    await userEvent.type(input, "9")
     expect(input).toHaveAttribute("aria-invalid", "true")
     expect(screen.getByRole("alert")).toHaveTextContent(/too long/i)
     expect(onErrorChange).toHaveBeenCalledWith(expect.stringMatching(/too long/i))
 
-    // Delete back down to a length that's no longer too long — error clears immediately, no blur.
-    await userEvent.type(input, "{Backspace}{Backspace}{Backspace}{Backspace}")
+    // Delete back down to the valid 10-digit number — clears immediately, no blur.
+    await userEvent.type(input, "{Backspace}")
     expect(input).toHaveAttribute("aria-invalid", "false")
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     expect(onErrorChange).toHaveBeenLastCalledWith(null)
+  })
+
+  it("TOO_LONG-length numbers (14+ digits for IN) also trigger the immediate error", async () => {
+    render(<PhoneInput defaultCountry="IN" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    // 14 digits is TOO_LONG for IN per libphonenumber-js metadata, independent of
+    // whether a shorter prefix was ever valid.
+    await userEvent.type(input, "99999999999999")
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.getByRole("alert")).toHaveTextContent(/too long/i)
   })
 
   it("blur with an incomplete number shows an error; blur with a valid number shows none", async () => {

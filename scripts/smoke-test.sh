@@ -15,7 +15,19 @@ npx serve public -l "$PORT" >"$TMP/serve.log" 2>&1 &
 SERVE_PID=$!
 
 cleanup() {
+  # npx wraps the real `serve` (node) process, which reparents immediately
+  # (not just on exit) — killing SERVE_PID or its tracked children misses it.
+  # Kill whatever actually holds the port instead.
+  pkill -P "$SERVE_PID" 2>/dev/null || true
   kill "$SERVE_PID" 2>/dev/null || true
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -k "$PORT/tcp" 2>/dev/null || true
+  else
+    # Git Bash/Windows has no fuser/lsof: find the PID via netstat, kill via taskkill.
+    for pid in $(netstat -ano 2>/dev/null | grep LISTENING | grep ":$PORT " | awk '{print $NF}' | sort -u); do
+      taskkill //F //PID "$pid" 2>/dev/null || true
+    done
+  fi
   rm -rf "$TMP"
 }
 trap cleanup EXIT
@@ -24,6 +36,8 @@ for _ in $(seq 1 30); do
   curl -sf "http://localhost:$PORT/r/registry.json" >/dev/null && break
   sleep 1
 done
+curl -sf "http://localhost:$PORT/r/registry.json" >/dev/null \
+  || { echo "server on :$PORT never came up"; exit 1; }
 
 npx create-next-app@latest "$TMP/app" --ts --tailwind --eslint --app --no-src-dir \
   --import-alias "@/*" --use-npm --yes

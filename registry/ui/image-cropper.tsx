@@ -18,8 +18,12 @@ interface ImageCropperProps
   cropShape?: "rect" | "round"
   /** Adds a rotation slider below the zoom slider. */
   rotate?: boolean
-  /** Receives the crop in source-image pixels, ready for getCroppedImage. */
-  onCropComplete?: (area: Area) => void
+  /**
+   * Receives the crop in source-image pixels plus the rotation it was taken
+   * under. Both are needed by getCroppedImage — the area is measured in the
+   * rotated frame, so cropping it without the rotation yields the wrong pixels.
+   */
+  onCropComplete?: (area: Area, rotation: number) => void
   /** External error; truthy = invalid. A crop can't be invalid on its own. */
   error?: React.ReactNode
   /** Default true. False renders visuals (aria-invalid) only — consumer renders the message. */
@@ -31,7 +35,11 @@ interface CroppedImageOptions {
   type?: string
   /** 0–1, honoured by lossy types only. */
   quality?: number
-  /** Degrees; must match the rotation the area was produced under. */
+  /**
+   * Degrees. Must be the rotation ImageCropper handed to onCropComplete
+   * alongside the area — the area is measured in that rotated frame, so a
+   * mismatch here crops the wrong pixels without erroring.
+   */
   rotation?: number
 }
 
@@ -154,14 +162,17 @@ const ImageCropper = React.forwardRef<HTMLDivElement, ImageCropperProps>(
     const [zoom, setZoom] = React.useState(MIN_ZOOM)
     const [rotation, setRotation] = React.useState(0)
     const errorId = React.useId()
+    const zoomLabelId = React.useId()
+    const rotateLabelId = React.useId()
     const isInvalid = !!error
     const showError = isInvalid && showErrorMessage !== false
 
     // react-easy-crop already fires this on interaction end (not per frame), so
-    // the passthrough needs no debounce of its own.
+    // the passthrough needs no debounce of its own. Rotation rides along because
+    // the pixel area is expressed in the rotated frame and is unusable without it.
     const handleCropComplete = React.useCallback(
-      (_percent: Area, pixels: Area) => onCropComplete?.(pixels),
-      [onCropComplete]
+      (_percent: Area, pixels: Area) => onCropComplete?.(pixels, rotation),
+      [onCropComplete, rotation]
     )
 
     return (
@@ -202,8 +213,16 @@ const ImageCropper = React.forwardRef<HTMLDivElement, ImageCropperProps>(
           />
         </div>
 
-        <div className="grid gap-1.5">
-          <Label className="text-muted-foreground text-xs">Zoom</Label>
+        {/* The labelled group is what carries the name to assistive tech: shadcn's
+            Slider spreads props onto Radix's Root, never onto the Thumb, and Radix
+            only names a single-thumb slider from the Thumb's own aria-label. So the
+            aria-label below lands on the Root and the Thumb stays unnamed — the
+            group announces "Zoom" on entry instead. Forward aria-label to
+            SliderPrimitive.Thumb in ui/slider.tsx if you want it on the thumb. */}
+        <div role="group" aria-labelledby={zoomLabelId} className="grid gap-1.5">
+          <Label id={zoomLabelId} className="text-muted-foreground text-xs">
+            Zoom
+          </Label>
           <Slider
             aria-label="Zoom"
             value={[zoom]}
@@ -215,8 +234,10 @@ const ImageCropper = React.forwardRef<HTMLDivElement, ImageCropperProps>(
         </div>
 
         {rotate && (
-          <div className="grid gap-1.5">
-            <Label className="text-muted-foreground text-xs">Rotate</Label>
+          <div role="group" aria-labelledby={rotateLabelId} className="grid gap-1.5">
+            <Label id={rotateLabelId} className="text-muted-foreground text-xs">
+              Rotate
+            </Label>
             <Slider
               aria-label="Rotate"
               value={[rotation]}

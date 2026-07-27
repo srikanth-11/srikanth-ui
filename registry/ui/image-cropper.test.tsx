@@ -87,8 +87,14 @@ beforeEach(() => {
   cropperProps = undefined
 })
 
+// Each control is a labelled group wrapping the slider — that group is what
+// carries the name to AT, since shadcn's Slider can't name the Radix thumb.
+function groupOf(name: string) {
+  return screen.getByRole("group", { name })
+}
+
 function thumbOf(name: string) {
-  return within(screen.getByLabelText(name)).getByRole("slider")
+  return within(groupOf(name)).getByRole("slider")
 }
 
 describe("computeCropRect", () => {
@@ -134,10 +140,10 @@ describe("computeCropRect", () => {
 })
 
 describe("ImageCropper", () => {
-  it("renders the cropper with the source image and a zoom slider", () => {
+  it("renders the cropper with the source image and a labelled zoom slider", () => {
     render(<ImageCropper src="/photo.png" />)
     expect(screen.getByTestId("cropper")).toHaveAttribute("data-image", "/photo.png")
-    expect(screen.getByLabelText("Zoom")).toHaveAttribute("data-slot", "slider")
+    expect(within(groupOf("Zoom")).getByLabelText("Zoom")).toHaveAttribute("data-slot", "slider")
     expect(thumbOf("Zoom")).toHaveAttribute("aria-valuenow", "1")
   })
 
@@ -165,7 +171,7 @@ describe("ImageCropper", () => {
 
   it("renders no rotation slider by default", () => {
     render(<ImageCropper src="/photo.png" />)
-    expect(screen.queryByLabelText("Rotate")).toBeNull()
+    expect(screen.queryByRole("group", { name: "Rotate" })).toBeNull()
   })
 
   it("rotate renders a rotation slider that drives the cropper rotation", () => {
@@ -177,12 +183,22 @@ describe("ImageCropper", () => {
     expect(screen.getByTestId("cropper")).toHaveAttribute("data-rotation", "1")
   })
 
-  it("forwards croppedAreaPixels (not the percentage area) to onCropComplete", () => {
+  it("forwards croppedAreaPixels (not the percentage area) plus the rotation", () => {
     const onCropComplete = vi.fn()
     render(<ImageCropper src="/photo.png" onCropComplete={onCropComplete} />)
     fireEvent.click(screen.getByRole("button", { name: "emit crop" }))
     expect(onCropComplete).toHaveBeenCalledTimes(1)
-    expect(onCropComplete).toHaveBeenCalledWith(PIXEL_AREA)
+    expect(onCropComplete).toHaveBeenCalledWith(PIXEL_AREA, 0)
+  })
+
+  // The pixel area is measured in the rotated frame, so a consumer that never
+  // learns the rotation feeds getCroppedImage the wrong frame and crops garbage.
+  it("reports the current rotation after the rotate slider moves", () => {
+    const onCropComplete = vi.fn()
+    render(<ImageCropper src="/photo.png" rotate onCropComplete={onCropComplete} />)
+    fireEvent.keyDown(thumbOf("Rotate"), { key: "ArrowRight" })
+    fireEvent.click(screen.getByRole("button", { name: "emit crop" }))
+    expect(onCropComplete).toHaveBeenLastCalledWith(PIXEL_AREA, 1)
   })
 
   it("survives a crop callback with no consumer handler", () => {

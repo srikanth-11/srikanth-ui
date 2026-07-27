@@ -60,6 +60,14 @@
       "files": [{ "path": "registry/ui/image-cropper.tsx", "type": "registry:ui" }],
       "dependencies": ["react-easy-crop"],
       "registryDependencies": ["slider", "label"]
+    },
+    {
+      "name": "cookie-consent",
+      "type": "registry:ui",
+      "title": "Cookie Consent",
+      "description": "SSR-safe cookie banner with per-category preferences dialog, versioned localStorage consent, and a getStoredConsent helper.",
+      "files": [{ "path": "registry/ui/cookie-consent.tsx", "type": "registry:ui" }],
+      "registryDependencies": ["button", "card", "dialog", "switch", "label"]
     }
   ]
 }

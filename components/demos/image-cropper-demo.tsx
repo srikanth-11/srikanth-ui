@@ -63,3 +63,13 @@ export function ImageCropperDemo() {
     </div>
   )
 }
+
+export function ImageCropperInvalidDemo() {
+  // A crop can't be invalid on its own — the app validates the result and
+  // passes `error`, which rings the crop area.
+  return (
+    <div className="w-full max-w-sm">
+      <ImageCropper src={SRC} aspect={1} error="Image must be at least 400×400" />
+    </div>
+  )
+}

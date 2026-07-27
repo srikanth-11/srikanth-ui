@@ -26,8 +26,10 @@ export function CookieConsentDemo() {
           storageKey={STORAGE_KEY}
           onConsent={setConsent}
           // Real apps keep the default `fixed`; `absolute` pins it inside this
-          // card instead. flex-wrap keeps the three actions in when it's narrow.
-          className="absolute [&_[data-slot=card-footer]]:flex-wrap"
+          // card instead. The footer's `sm:flex-row` keys off the viewport, which
+          // is the wrong signal for a fixed-height box — forced back to a wrapping
+          // row so three stacked buttons can't push the title out of the frame.
+          className="absolute [&_[data-slot=card-footer]]:flex-row [&_[data-slot=card-footer]]:flex-wrap"
         />
       </div>
       <div className="flex items-center gap-2">

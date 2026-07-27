@@ -1,11 +1,11 @@
 import type { ComponentType } from "react"
-import { TimePickerDemo } from "@/components/demos/time-picker-demo"
+import { TimePickerDemo, TimePickerInvalidDemo } from "@/components/demos/time-picker-demo"
 import { PhoneInputDemo, PhoneInputInvalidDemo } from "@/components/demos/phone-input-demo"
-import { PasswordInputDemo } from "@/components/demos/password-input-demo"
+import { PasswordInputDemo, PasswordInputInvalidDemo } from "@/components/demos/password-input-demo"
 import { NumberInputDemo, NumberInputInvalidDemo } from "@/components/demos/number-input-demo"
 import { ColorPickerDemo, ColorPickerInvalidDemo } from "@/components/demos/color-picker-demo"
-import { SignaturePadDemo } from "@/components/demos/signature-pad-demo"
-import { ImageCropperDemo } from "@/components/demos/image-cropper-demo"
+import { SignaturePadDemo, SignaturePadInvalidDemo } from "@/components/demos/signature-pad-demo"
+import { ImageCropperDemo, ImageCropperInvalidDemo } from "@/components/demos/image-cropper-demo"
 import { CookieConsentDemo } from "@/components/demos/cookie-consent-demo"
 
 export const SITE_URL = "https://srikanth-ui.vercel.app"
@@ -25,6 +25,7 @@ export const registryMeta: RegistryMetaEntry[] = [
     title: "Time Picker",
     description: "Keyboard-first time input with hour/minute/second segments and 12/24h support.",
     Demo: TimePickerDemo,
+    InvalidDemo: TimePickerInvalidDemo,
   },
   {
     name: "phone-input",
@@ -38,6 +39,7 @@ export const registryMeta: RegistryMetaEntry[] = [
     title: "Password Input",
     description: "Password field with visibility toggle, strength meter, and rule checklist.",
     Demo: PasswordInputDemo,
+    InvalidDemo: PasswordInputInvalidDemo,
   },
   {
     name: "number-input",
@@ -58,12 +60,14 @@ export const registryMeta: RegistryMetaEntry[] = [
     title: "Signature Pad",
     description: "Canvas signature capture with pointer drawing, stroke-level undo, and a hidden form input.",
     Demo: SignaturePadDemo,
+    InvalidDemo: SignaturePadInvalidDemo,
   },
   {
     name: "image-cropper",
     title: "Image Cropper",
     description: "Image cropper with zoom and rotation sliders, plus a canvas helper returning a Blob.",
     Demo: ImageCropperDemo,
+    InvalidDemo: ImageCropperInvalidDemo,
   },
   {
     name: "cookie-consent",

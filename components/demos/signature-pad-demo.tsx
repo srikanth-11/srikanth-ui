@@ -30,3 +30,13 @@ export function SignaturePadDemo() {
     </div>
   )
 }
+
+export function SignaturePadInvalidDemo() {
+  // A signature can't be invalid on its own — the form decides, and `error`
+  // puts aria-invalid on the pad region.
+  return (
+    <div className="w-full max-w-sm">
+      <SignaturePad error="Signature is required" />
+    </div>
+  )
+}

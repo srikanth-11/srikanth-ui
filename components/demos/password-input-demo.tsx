@@ -11,3 +11,13 @@ export function PasswordInputDemo() {
     </div>
   )
 }
+
+export function PasswordInputInvalidDemo() {
+  // No default validator — password policy is app-specific, so the app passes
+  // `error` (or a `validate` fn) and the field renders the invalid styling.
+  return (
+    <div className="w-full max-w-sm">
+      <PasswordInput placeholder="Password" error="Password is required" />
+    </div>
+  )
+}

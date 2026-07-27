@@ -13,3 +13,20 @@ export function TimePickerDemo() {
     </TimePicker>
   )
 }
+
+export function TimePickerInvalidDemo() {
+  // Segments can't produce an invalid time — invalid is always the app's call,
+  // passed in through `error` (aria-invalid lands on every segment).
+  return (
+    <TimePicker
+      defaultValue={new Date(2026, 0, 1, 3, 15)}
+      hourCycle={12}
+      error="Select a time within business hours"
+    >
+      <TimePickerInput unit="hours" />
+      <span className="text-muted-foreground">:</span>
+      <TimePickerInput unit="minutes" />
+      <TimePickerPeriod />
+    </TimePicker>
+  )
+}

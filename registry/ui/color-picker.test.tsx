@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import {
   ColorPicker,
+  ColorPickerAlpha,
   ColorPickerArea,
   ColorPickerHue,
   ColorPickerInput,
@@ -187,6 +188,42 @@ describe("ColorPicker", () => {
     expect(onChange).toHaveBeenCalledWith("#00ff00")
     expect(input).toHaveAttribute("aria-invalid", "false")
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it("RTL: ArrowRight decreases hue's aria-valuenow, ArrowLeft increases it", () => {
+    render(
+      <div dir="rtl">
+        <ColorPicker value="#3b82f6" onChange={() => {}}>
+          <ColorPickerHue />
+        </ColorPicker>
+      </div>
+    )
+    const hue = screen.getByRole("slider", { name: "Hue" })
+    const initial = Number(hue.getAttribute("aria-valuenow"))
+    hue.focus()
+    fireEvent.keyDown(hue, { key: "ArrowRight" })
+    const afterRight = Number(hue.getAttribute("aria-valuenow"))
+    expect(afterRight).toBeLessThan(initial)
+    fireEvent.keyDown(hue, { key: "ArrowLeft" })
+    const afterLeft = Number(hue.getAttribute("aria-valuenow"))
+    expect(afterLeft).toBeGreaterThan(afterRight)
+  })
+
+  it("ColorPickerAlpha: role=slider with aria-valuenow, ArrowRight changes alpha and the emitted hex keeps an 8-digit alpha channel", () => {
+    const onChange = vi.fn()
+    render(
+      <ColorPicker value="#ff000080" onChange={onChange}>
+        <ColorPickerAlpha />
+      </ColorPicker>
+    )
+    const alpha = screen.getByRole("slider", { name: "Alpha" })
+    expect(alpha).toHaveAttribute("aria-valuenow", "50")
+    alpha.focus()
+    fireEvent.keyDown(alpha, { key: "ArrowRight" })
+    expect(onChange).toHaveBeenCalledTimes(1)
+    const nextHex = onChange.mock.calls[0][0] as string
+    expect(nextHex).toMatch(/^#[0-9a-f]{8}$/)
+    expect(nextHex).not.toBe("#ff000080")
   })
 
   it("warns in dev when value is set without onChange", () => {

@@ -76,15 +76,30 @@ function useColorPicker() {
   return ctx
 }
 
+// Detects `dir="rtl"` on an ancestor of the track element. Checks the DOM
+// attribute directly rather than the CSS `direction` computed value: `dir`
+// is how RTL is set in virtually every real app (<html dir="rtl">, or a
+// wrapping dir="rtl"), needs no CSS engine to resolve, and — unlike
+// getComputedStyle — actually reflects in DOM-only test environments
+// (happy-dom doesn't implement the `[dir]` UA-stylesheet rule).
+function useRtl(ref: React.RefObject<HTMLElement | null>) {
+  const [rtl, setRtl] = React.useState(false)
+  React.useLayoutEffect(() => {
+    setRtl(ref.current?.closest("[dir]")?.getAttribute("dir") === "rtl")
+  }, [ref])
+  return rtl
+}
+
 // Shared 1D pointer-drag + keyboard-step behavior for Hue/Alpha strips.
 function useTrackPct(disabled: boolean | undefined, onPct: (pct: number) => void) {
   const trackRef = React.useRef<HTMLDivElement | null>(null)
+  const rtl = useRtl(trackRef)
 
   const fromClientX = (clientX: number) => {
     const el = trackRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    const pct = rect.width === 0 ? 0 : clamp((clientX - rect.left) / rect.width, 0, 1)
+    const pct = rect.width === 0 ? 0 : clamp(rtl ? (rect.right - clientX) / rect.width : (clientX - rect.left) / rect.width, 0, 1)
     onPct(pct)
   }
 
@@ -98,7 +113,7 @@ function useTrackPct(disabled: boolean | undefined, onPct: (pct: number) => void
     fromClientX(e.clientX)
   }
 
-  return { trackRef, onPointerDown, onPointerMove }
+  return { trackRef, onPointerDown, onPointerMove, rtl }
 }
 
 interface ColorPickerProps
@@ -213,15 +228,16 @@ const ColorPickerArea = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HT
   ({ className, style, onPointerDown, onPointerMove, onKeyDown, ...props }, ref) => {
     const { hsva, setHsva, disabled } = useColorPicker()
     const trackRef = React.useRef<HTMLDivElement | null>(null)
+    const rtl = useRtl(trackRef)
     React.useImperativeHandle(ref, () => trackRef.current as HTMLDivElement)
 
     const updateFromPoint = (clientX: number, clientY: number) => {
       const el = trackRef.current
       if (!el) return
       const rect = el.getBoundingClientRect()
-      const s = rect.width === 0 ? 0 : clamp((clientX - rect.left) / rect.width, 0, 1) * 100
+      const sPct = rect.width === 0 ? 0 : clamp(rtl ? (rect.right - clientX) / rect.width : (clientX - rect.left) / rect.width, 0, 1)
       const v = rect.height === 0 ? 0 : (1 - clamp((clientY - rect.top) / rect.height, 0, 1)) * 100
-      setHsva({ ...hsva, s, v })
+      setHsva({ ...hsva, s: sPct * 100, v })
     }
 
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -240,8 +256,10 @@ const ColorPickerArea = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HT
       if (e.defaultPrevented || disabled) return
       const step = e.shiftKey ? 10 : 1
       let { s, v } = hsva
-      if (e.key === "ArrowRight") s = clamp(s + step, 0, 100)
-      else if (e.key === "ArrowLeft") s = clamp(s - step, 0, 100)
+      // Radix-slider convention: ArrowRight/Left move the thumb visually, so
+      // they flip sign in RTL; ArrowUp/Down (the vertical axis) don't.
+      if (e.key === "ArrowRight") s = clamp(s + (rtl ? -step : step), 0, 100)
+      else if (e.key === "ArrowLeft") s = clamp(s + (rtl ? step : -step), 0, 100)
       else if (e.key === "ArrowUp") v = clamp(v + step, 0, 100)
       else if (e.key === "ArrowDown") v = clamp(v - step, 0, 100)
       else return
@@ -263,11 +281,14 @@ const ColorPickerArea = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HT
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onKeyDown={handleKeyDown}
-        className={cn("relative h-40 w-full touch-none rounded-md", disabled && "opacity-50", className)}
+        className={cn(
+          "relative h-40 w-full touch-none rounded-md focus-visible:ring-ring/50 focus-visible:ring-2 focus-visible:outline-none",
+          disabled && "opacity-50",
+          className
+        )}
         style={{
           backgroundColor: `hsl(${hsva.h} 100% 50%)`,
-          backgroundImage:
-            "linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
+          backgroundImage: `linear-gradient(to top, #000, transparent), linear-gradient(to ${rtl ? "left" : "right"}, #fff, transparent)`,
           ...style,
         }}
         {...props}
@@ -283,13 +304,14 @@ const ColorPickerArea = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HT
 )
 ColorPickerArea.displayName = "ColorPickerArea"
 
-const HUE_GRADIENT =
-  "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
+const HUE_STOPS = "#f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%"
+const HUE_GRADIENT = `linear-gradient(to right, ${HUE_STOPS})`
+const HUE_GRADIENT_RTL = `linear-gradient(to left, ${HUE_STOPS})`
 
 const ColorPickerHue = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, style, onPointerDown, onPointerMove, onKeyDown, ...props }, ref) => {
     const { hsva, setHsva, disabled } = useColorPicker()
-    const { trackRef, onPointerDown: dragDown, onPointerMove: dragMove } = useTrackPct(disabled, (pct) =>
+    const { trackRef, onPointerDown: dragDown, onPointerMove: dragMove, rtl } = useTrackPct(disabled, (pct) =>
       setHsva({ ...hsva, h: pct * 360 })
     )
     React.useImperativeHandle(ref, () => trackRef.current as HTMLDivElement)
@@ -298,13 +320,16 @@ const ColorPickerHue = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTM
       onKeyDown?.(e)
       if (e.defaultPrevented || disabled) return
       const step = e.shiftKey ? 10 : 1
-      if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-        e.preventDefault()
-        setHsva({ ...hsva, h: clamp(hsva.h + step, 0, 360) })
-      } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-        e.preventDefault()
-        setHsva({ ...hsva, h: clamp(hsva.h - step, 0, 360) })
-      }
+      let delta = 0
+      // Radix-slider convention: ArrowRight/Left move the thumb visually, so
+      // they flip sign in RTL; ArrowUp/Down don't.
+      if (e.key === "ArrowRight") delta = rtl ? -step : step
+      else if (e.key === "ArrowLeft") delta = rtl ? step : -step
+      else if (e.key === "ArrowUp") delta = step
+      else if (e.key === "ArrowDown") delta = -step
+      else return
+      e.preventDefault()
+      setHsva({ ...hsva, h: clamp(hsva.h + delta, 0, 360) })
     }
 
     return (
@@ -320,8 +345,12 @@ const ColorPickerHue = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTM
         onPointerDown={(e) => { onPointerDown?.(e); if (!e.defaultPrevented) dragDown(e) }}
         onPointerMove={(e) => { onPointerMove?.(e); if (!e.defaultPrevented) dragMove(e) }}
         onKeyDown={handleKeyDown}
-        className={cn("relative h-3 w-full touch-none rounded-full", disabled && "opacity-50", className)}
-        style={{ backgroundImage: HUE_GRADIENT, ...style }}
+        className={cn(
+          "relative h-3 w-full touch-none rounded-full focus-visible:ring-ring/50 focus-visible:ring-2 focus-visible:outline-none",
+          disabled && "opacity-50",
+          className
+        )}
+        style={{ backgroundImage: rtl ? HUE_GRADIENT_RTL : HUE_GRADIENT, ...style }}
         {...props}
       >
         <div
@@ -338,7 +367,7 @@ ColorPickerHue.displayName = "ColorPickerHue"
 const ColorPickerAlpha = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, style, onPointerDown, onPointerMove, onKeyDown, ...props }, ref) => {
     const { hsva, setHsva, disabled } = useColorPicker()
-    const { trackRef, onPointerDown: dragDown, onPointerMove: dragMove } = useTrackPct(disabled, (pct) =>
+    const { trackRef, onPointerDown: dragDown, onPointerMove: dragMove, rtl } = useTrackPct(disabled, (pct) =>
       setHsva({ ...hsva, a: pct })
     )
     React.useImperativeHandle(ref, () => trackRef.current as HTMLDivElement)
@@ -347,13 +376,16 @@ const ColorPickerAlpha = React.forwardRef<HTMLDivElement, React.HTMLAttributes<H
       onKeyDown?.(e)
       if (e.defaultPrevented || disabled) return
       const step = (e.shiftKey ? 10 : 1) / 100
-      if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-        e.preventDefault()
-        setHsva({ ...hsva, a: clamp(hsva.a + step, 0, 1) })
-      } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-        e.preventDefault()
-        setHsva({ ...hsva, a: clamp(hsva.a - step, 0, 1) })
-      }
+      let delta = 0
+      // Radix-slider convention: ArrowRight/Left move the thumb visually, so
+      // they flip sign in RTL; ArrowUp/Down don't.
+      if (e.key === "ArrowRight") delta = rtl ? -step : step
+      else if (e.key === "ArrowLeft") delta = rtl ? step : -step
+      else if (e.key === "ArrowUp") delta = step
+      else if (e.key === "ArrowDown") delta = -step
+      else return
+      e.preventDefault()
+      setHsva({ ...hsva, a: clamp(hsva.a + delta, 0, 1) })
     }
 
     const solid = hsvaToHex({ ...hsva, a: 1 })
@@ -371,9 +403,13 @@ const ColorPickerAlpha = React.forwardRef<HTMLDivElement, React.HTMLAttributes<H
         onPointerDown={(e) => { onPointerDown?.(e); if (!e.defaultPrevented) dragDown(e) }}
         onPointerMove={(e) => { onPointerMove?.(e); if (!e.defaultPrevented) dragMove(e) }}
         onKeyDown={handleKeyDown}
-        className={cn("relative h-3 w-full touch-none rounded-full", disabled && "opacity-50", className)}
+        className={cn(
+          "relative h-3 w-full touch-none rounded-full focus-visible:ring-ring/50 focus-visible:ring-2 focus-visible:outline-none",
+          disabled && "opacity-50",
+          className
+        )}
         style={{
-          backgroundImage: `linear-gradient(to right, transparent, ${solid}), repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%)`,
+          backgroundImage: `linear-gradient(to ${rtl ? "left" : "right"}, transparent, ${solid}), repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%)`,
           backgroundSize: "100% 100%, 0.5rem 0.5rem",
           ...style,
         }}

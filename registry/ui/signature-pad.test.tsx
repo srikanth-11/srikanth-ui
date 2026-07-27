@@ -6,6 +6,7 @@ import { SignaturePad, type SignaturePadHandle } from "./signature-pad"
 // happy-dom ships no 2D rasterizer: getContext("2d") returns null and toDataURL
 // has nothing to encode. Stub both — what's under test is the stroke STATE
 // machine (strokes list, undo, isEmpty, hidden input sync), not pixels.
+const fillRectColors: string[] = []
 const ctx = {
   canvas: null,
   lineWidth: 0,
@@ -15,7 +16,10 @@ const ctx = {
   fillStyle: "",
   setTransform: vi.fn(),
   clearRect: vi.fn(),
-  fillRect: vi.fn(),
+  // Records the fillStyle in force at paint time so backgroundColor is observable.
+  fillRect: vi.fn(() => {
+    fillRectColors.push(ctx.fillStyle)
+  }),
   beginPath: vi.fn(),
   moveTo: vi.fn(),
   lineTo: vi.fn(),
@@ -38,6 +42,7 @@ Object.defineProperty(HTMLCanvasElement.prototype, "toDataURL", {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  fillRectColors.length = 0
 })
 
 function setup(props: React.ComponentProps<typeof SignaturePad> = {}) {
@@ -130,17 +135,73 @@ describe("SignaturePad", () => {
     expect(container.querySelector('input[type="hidden"]')).toBeNull()
   })
 
+  it("ignores pointers other than the one that started the stroke", () => {
+    const onEnd = vi.fn()
+    const { ref, canvas } = setup({ onEnd })
+    fireEvent.pointerDown(canvas, { pointerId: 1, buttons: 1, clientX: 10, clientY: 10 })
+
+    // Foreign pointer: no redraw at all, so it cannot have added a point.
+    vi.clearAllMocks()
+    fireEvent.pointerMove(canvas, { pointerId: 2, buttons: 1, clientX: 300, clientY: 300 })
+    expect(ctx.stroke).not.toHaveBeenCalled()
+    fireEvent.pointerUp(canvas, { pointerId: 2, clientX: 300, clientY: 300 })
+    expect(onEnd).not.toHaveBeenCalled()
+    expect(ref.current!.isEmpty()).toBe(true)
+
+    // The owning pointer still draws and still ends the stroke, exactly once.
+    fireEvent.pointerMove(canvas, { pointerId: 1, buttons: 1, clientX: 20, clientY: 20 })
+    expect(ctx.stroke).toHaveBeenCalled()
+    fireEvent.pointerUp(canvas, { pointerId: 1, clientX: 20, clientY: 20 })
+    expect(onEnd).toHaveBeenCalledTimes(1)
+    expect(ref.current!.isEmpty()).toBe(false)
+  })
+
+  it("disabling mid-stroke abandons the stroke and leaves the pad usable after re-enabling", () => {
+    const onEnd = vi.fn()
+    const ref = React.createRef<SignaturePadHandle>()
+    const { rerender } = render(<SignaturePad ref={ref} onEnd={onEnd} />)
+    const canvas = screen.getByRole("img")
+    fireEvent.pointerDown(canvas, { pointerId: 1, buttons: 1, clientX: 10, clientY: 10 })
+
+    rerender(<SignaturePad ref={ref} onEnd={onEnd} disabled />)
+    expect(onEnd).not.toHaveBeenCalled()
+    expect(ref.current!.isEmpty()).toBe(true)
+
+    rerender(<SignaturePad ref={ref} onEnd={onEnd} />)
+    // Hover (no button down, no pointerdown) must not draw — the abandoned
+    // stroke would otherwise still be collecting points.
+    vi.clearAllMocks()
+    fireEvent.pointerMove(canvas, { pointerId: 1, buttons: 0, clientX: 50, clientY: 50 })
+    expect(ctx.stroke).not.toHaveBeenCalled()
+
+    drawStroke(canvas)
+    expect(onEnd).toHaveBeenCalledTimes(1)
+    expect(ref.current!.isEmpty()).toBe(false)
+  })
+
+  it("penColor and backgroundColor reach the canvas context", () => {
+    const { canvas } = setup({ penColor: "#ff0000", backgroundColor: "#00ff00" })
+    drawStroke(canvas)
+    expect(fillRectColors).toContain("#00ff00")
+    expect(ctx.strokeStyle).toBe("#ff0000")
+  })
+
   it("error: aria-invalid on the wrapper region and a role=alert message", () => {
     const { container, rerender } = setup({ error: "Signature is required" })
     const wrapper = container.querySelector('[data-slot="signature-pad"]')!
+    expect(wrapper).toHaveAttribute("role", "group")
     expect(wrapper).toHaveAttribute("aria-invalid", "true")
-    expect(screen.getByRole("alert")).toHaveTextContent("Signature is required")
+    const alert = screen.getByRole("alert")
+    expect(alert).toHaveTextContent("Signature is required")
+    // The region is described by the message, so AT announces the reason.
+    expect(wrapper.getAttribute("aria-describedby")).toBe(alert.id)
+    expect(alert.id).toBeTruthy()
 
     rerender(<SignaturePad error="Signature is required" showErrorMessage={false} />)
-    expect(container.querySelector('[data-slot="signature-pad"]')).toHaveAttribute(
-      "aria-invalid",
-      "true"
-    )
+    const quiet = container.querySelector('[data-slot="signature-pad"]')!
+    expect(quiet).toHaveAttribute("aria-invalid", "true")
+    // No message rendered, so nothing to point aria-describedby at.
+    expect(quiet).not.toHaveAttribute("aria-describedby")
     expect(screen.queryByRole("alert")).toBeNull()
   })
 

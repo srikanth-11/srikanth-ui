@@ -68,8 +68,13 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
     // them should re-render React. Only the hidden input's value is state.
     const strokes = React.useRef<Point[][]>([])
     const current = React.useRef<Point[] | null>(null)
+    // Only the pointer that started the stroke may extend or end it — a palm or
+    // second finger otherwise jumps the line and commits the stroke early.
+    const activeId = React.useRef<number | null>(null)
     const [value, setValue] = React.useState("")
+    const errorId = React.useId()
     const isInvalid = !!error
+    const showError = isInvalid && showErrorMessage !== false
 
     const toDataURL = React.useCallback(
       (type?: string) => canvasRef.current?.toDataURL(type) ?? "",
@@ -120,6 +125,16 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
       return () => observer.disconnect()
     }, [redraw])
 
+    // Disabled mid-stroke: abandon the in-flight stroke instead of committing it.
+    // Without this the pad wedges — `pointer-events-none` swallows the ending
+    // event, so `current` stays set and every later pointerdown returns early.
+    React.useEffect(() => {
+      if (!disabled || !current.current) return
+      current.current = null
+      activeId.current = null
+      redraw()
+    }, [disabled, redraw])
+
     const sync = React.useCallback(() => {
       const url = strokes.current.length ? toDataURL() : ""
       setValue(url)
@@ -151,24 +166,28 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
       return { x: e.clientX - rect.left, y: e.clientY - rect.top }
     }
 
+    const isActive = (e: React.PointerEvent<HTMLCanvasElement>) =>
+      !disabled && !!current.current && e.pointerId === activeId.current
+
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-      // A second pointer (palm, multi-touch) must not hijack the stroke in progress.
       if (disabled || current.current) return
       e.currentTarget.setPointerCapture?.(e.pointerId)
+      activeId.current = e.pointerId
       current.current = [pointFrom(e)]
       redraw()
     }
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (disabled || !current.current) return
-      current.current.push(pointFrom(e))
+      if (!isActive(e)) return
+      current.current!.push(pointFrom(e))
       redraw()
     }
 
-    const handlePointerUp = () => {
-      if (disabled || !current.current) return
-      strokes.current = [...strokes.current, current.current]
+    const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!isActive(e)) return
+      strokes.current = [...strokes.current, current.current!]
       current.current = null
+      activeId.current = null
       redraw()
       // sync() outside the optional call — `onEnd?.(sync())` would skip the
       // hidden-input update entirely whenever no onEnd handler is passed.
@@ -178,10 +197,17 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
 
     return (
       <>
+        {/* ARIA 1.2 dropped aria-invalid from the global attributes, so `group`
+            formally rejects it — but it is this registry's invalid styling hook
+            (aria-invalid:* below), and the error itself is announced by the
+            role="alert" message, not by the attribute. */}
+        {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props */}
         <div
           data-slot="signature-pad"
+          role="group"
           aria-invalid={isInvalid || undefined}
           aria-disabled={disabled || undefined}
+          aria-describedby={showError ? errorId : undefined}
           className={cn(
             "border-input bg-background relative h-40 w-full overflow-hidden rounded-md border shadow-xs",
             "aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-[3px]",
@@ -203,8 +229,8 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
           />
         </div>
         {name && <input type="hidden" name={name} value={value} disabled={disabled} readOnly />}
-        {isInvalid && showErrorMessage !== false && (
-          <p role="alert" className="text-destructive mt-1.5 text-xs">
+        {showError && (
+          <p id={errorId} role="alert" className="text-destructive mt-1.5 text-xs">
             {error}
           </p>
         )}

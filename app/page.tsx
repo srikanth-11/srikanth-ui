@@ -16,7 +16,10 @@ export default function Home() {
           Or configure the @srikanth namespace once — see README.
         </p>
       </section>
-      <section className="grid gap-6 sm:grid-cols-2">
+      {/* grid-cols-1 is not a no-op: the implicit single track below `sm` is
+          `auto`, so the widest demo (a board that means to scroll) would size
+          every card. `minmax(0, 1fr)` hands the overflow back to the demo. */}
+      <section className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {registryMeta.map(({ name, title, description, Demo }) => (
           <div
             key={name}

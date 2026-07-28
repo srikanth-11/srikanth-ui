@@ -42,3 +42,8 @@ next-env.d.ts
 
 # scratch
 /.superpowers/
+
+# internal planning docs + agent config (local only)
+/docs/
+CLAUDE.md
+AGENTS.md

@@ -29,7 +29,11 @@ export default function RootLayout({
       lang="en"
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+      {/* A column flex container stretches its children to the widest one's
+          min-content, and `min-width: 0` does not undo that — a demo that means
+          to scroll (a board) would drag the whole page past the viewport with it.
+          `w-full` makes the width definite instead of content-driven. */}
+      <body className="min-h-full flex flex-col antialiased [&>*]:w-full">{children}</body>
     </html>
   );
 }

@@ -283,11 +283,21 @@ const Kanban = React.forwardRef<HTMLDivElement, KanbanProps>(
       if (!target) return
       // Dropped on a card → take its slot; dropped on the column itself → append.
       const overIndex = target.items.findIndex((item) => item.id === String(over.id))
+      // Crossing columns, a card released past the hovered card's midpoint belongs after it —
+      // otherwise the last slot of a non-empty column is unreachable, since collision detection
+      // always picks the nearest card over the column itself. Within a column no bump: moveItem
+      // removes the card first, which already shifts the tail up (arrayMove semantics).
+      const dragged = active.rect?.current?.translated
+      const past =
+        locate(active.id)?.column !== target &&
+        !!dragged &&
+        !!over.rect &&
+        dragged.top + dragged.height / 2 > over.rect.top + over.rect.height / 2
       const next = moveItem(
         board,
         String(active.id),
         target.id,
-        overIndex === -1 ? target.items.length : overIndex
+        overIndex === -1 ? target.items.length : overIndex + (past ? 1 : 0)
       )
       if (next !== board) onChange?.(next)
     }

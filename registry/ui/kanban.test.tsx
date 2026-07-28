@@ -53,6 +53,25 @@ const drop = (activeId: string, overId: string) =>
     dnd.onDragEnd?.({ active: { id: activeId }, over: { id: overId } } as DragEndEvent)
   })
 
+// Synthetic geometry — happy-dom measures everything as 0x0, so the rects dnd-kit would
+// hand the drop handler in a browser are supplied here instead.
+const rect = (top: number, height = 40) => ({
+  top,
+  left: 0,
+  width: 200,
+  height,
+  bottom: top + height,
+  right: 200,
+})
+
+const dropAt = (activeId: string, overId: string, activeTop: number, overTop: number) =>
+  act(() => {
+    dnd.onDragEnd?.({
+      active: { id: activeId, rect: { current: { translated: rect(activeTop) } } },
+      over: { id: overId, rect: rect(overTop) },
+    } as unknown as DragEndEvent)
+  })
+
 describe("moveItem", () => {
   it("reorders within a column", () => {
     expect(ids(moveItem(board(), "t1", "todo", 1))).toEqual([
@@ -223,6 +242,47 @@ describe("Kanban onChange", () => {
       ["doing", ["t1", "d1"]],
       ["done", []],
     ])
+  })
+
+  it("drops after the hovered card when the dragged card's center is past its midpoint", () => {
+    const onChange = vi.fn()
+    render(<Kanban columns={board()} onChange={onChange} />)
+    dropAt("t1", "d1", 120, 100) // dragged center 140 > d1 center 120
+    expect(ids(onChange.mock.calls[0][0])).toEqual([
+      ["todo", ["t2"]],
+      ["doing", ["d1", "t1"]],
+      ["done", []],
+    ])
+  })
+
+  it("drops before the hovered card when the center is above its midpoint", () => {
+    const onChange = vi.fn()
+    render(<Kanban columns={board()} onChange={onChange} />)
+    dropAt("t1", "d1", 80, 100) // dragged center 100 < d1 center 120
+    expect(ids(onChange.mock.calls[0][0])).toEqual([
+      ["todo", ["t2"]],
+      ["doing", ["t1", "d1"]],
+      ["done", []],
+    ])
+  })
+
+  it("keeps arrayMove semantics for a within-column drop past a midpoint", () => {
+    const onChange = vi.fn()
+    const columns: KanbanColumn[] = [
+      {
+        id: "todo",
+        title: "To do",
+        items: [
+          { id: "t1", title: "One" },
+          { id: "t2", title: "Two" },
+          { id: "t3", title: "Three" },
+        ],
+      },
+    ]
+    render(<Kanban columns={columns} onChange={onChange} />)
+    // Removing the card first already shifts the tail up, so no midpoint bump here.
+    dropAt("t1", "t2", 120, 100)
+    expect(ids(onChange.mock.calls[0][0])).toEqual([["todo", ["t2", "t1", "t3"]]])
   })
 
   it("appends to the end when dropped on a column container", () => {

@@ -77,6 +77,15 @@
       "files": [{ "path": "registry/ui/event-calendar.tsx", "type": "registry:ui" }],
       "dependencies": ["date-fns"],
       "registryDependencies": ["button"]
+    },
+    {
+      "name": "kanban",
+      "type": "registry:ui",
+      "title": "Kanban",
+      "description": "Controlled drag-and-drop board with sortable cards, cross-column moves, pointer and keyboard sensors, screen reader announcements, and card/header render slots.",
+      "files": [{ "path": "registry/ui/kanban.tsx", "type": "registry:ui" }],
+      "dependencies": ["@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities"],
+      "registryDependencies": ["card", "badge"]
     }
   ]
 }

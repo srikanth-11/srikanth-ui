@@ -13,12 +13,12 @@ import {
   type Announcements,
   type DragEndEvent,
   type DragStartEvent,
+  type KeyboardCoordinateGetter,
   type ScreenReaderInstructions,
   type UniqueIdentifier,
 } from "@dnd-kit/core"
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
@@ -82,6 +82,73 @@ function moveItem(
         ? { ...column, items: source }
         : column
   )
+}
+
+/**
+ * Keyboard drag targeting for a multi-column board.
+ *
+ * dnd-kit's `sortableKeyboardCoordinates` assumes one `SortableContext`: it filters
+ * droppables purely by rect geometry, so on a board it only ever finds the columns to the
+ * right and never the neighbouring cards — left is dead and up/down never retarget within a
+ * column. This walks the board structurally instead, using the `type`/`columnId` data every
+ * droppable here carries, and returns the target rect's viewport origin (the same
+ * convention as the dnd-kit getter: aligning the dragged rect with a droppable is what makes
+ * collision detection resolve to it).
+ *
+ * The slots of a column are its cards, plus one below the last card — dropping there lands
+ * past the last card's midpoint, which is how `handleDragEnd` distinguishes "after" from
+ * "before", so the end of a column is keyboard-reachable too. Columns are ordered by
+ * `rect.left`, so arrow keys stay visual (correct under RTL, where the first column is on
+ * the right).
+ */
+const kanbanKeyboardCoordinates: KeyboardCoordinateGetter = (event, { active, context }) => {
+  if (!event.code.startsWith("Arrow")) return
+  event.preventDefault()
+
+  const { droppableContainers, droppableRects, over } = context
+  const rectOf = (id: UniqueIdentifier) => droppableRects.get(id)
+  const entries = droppableContainers.getEnabled().filter((entry) => rectOf(entry.id))
+  const columns = entries
+    .filter((entry) => entry.data.current?.type === "column")
+    .sort((a, b) => rectOf(a.id)!.left - rectOf(b.id)!.left)
+    .map((entry) => entry.id)
+  const cardsOf = (columnId: UniqueIdentifier) =>
+    entries
+      .filter(
+        (entry) =>
+          entry.data.current?.type === "item" && entry.data.current.columnId === columnId
+      )
+      .sort((a, b) => rectOf(a.id)!.top - rectOf(b.id)!.top)
+      .map((entry) => entry.id)
+
+  // Where the drag currently points: the hovered droppable, or the dragged card's own slot
+  // before anything has been hovered.
+  const currentId = over?.id ?? active
+  const data = droppableContainers.get(currentId)?.data.current
+  const columnId: UniqueIdentifier | undefined =
+    data?.type === "column" ? currentId : data?.type === "item" ? data.columnId : undefined
+  if (columnId === undefined) return
+  const cards = cardsOf(columnId)
+  const slot = data?.type === "column" ? cards.length : cards.indexOf(currentId)
+
+  let nextColumnId = columnId
+  let nextSlot = slot
+  if (event.code === "ArrowUp" || event.code === "ArrowDown") {
+    nextSlot = slot + (event.code === "ArrowDown" ? 1 : -1)
+  } else {
+    const column = columns.indexOf(columnId) + (event.code === "ArrowLeft" ? -1 : 1)
+    if (column < 0 || column >= columns.length) return
+    nextColumnId = columns[column]
+    nextSlot = Math.min(slot, cardsOf(nextColumnId).length)
+  }
+
+  const nextCards = cardsOf(nextColumnId)
+  if (nextSlot < 0 || nextSlot > nextCards.length) return
+  const target = rectOf(nextCards[nextSlot] ?? nextCards[nextCards.length - 1] ?? nextColumnId)
+  if (!target) return
+  // Past the last card there is no rect to align with — sit one card-height lower.
+  const below = nextSlot === nextCards.length && nextCards.length > 0
+  return { x: target.left, y: target.top + (below ? target.height : 0) }
 }
 
 const screenReaderInstructions: ScreenReaderInstructions = {
@@ -189,6 +256,7 @@ const Kanban = React.forwardRef<HTMLDivElement, KanbanProps>(
     ref
   ) => {
     const [activeId, setActiveId] = React.useState<string | null>(null)
+    const dndId = React.useId()
 
     if (process.env.NODE_ENV !== "production" && !onChange) {
       console.warn("Kanban: `columns` without `onChange` — the board is read-only.")
@@ -234,7 +302,7 @@ const Kanban = React.forwardRef<HTMLDivElement, KanbanProps>(
     const sensors = useSensors(
       // A few pixels of slop so a click on a card is still a click, not a drag.
       useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-      useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+      useSensor(KeyboardSensor, { coordinateGetter: kanbanKeyboardCoordinates })
     )
 
     const locate = React.useCallback(
@@ -311,6 +379,9 @@ const Kanban = React.forwardRef<HTMLDivElement, KanbanProps>(
     return (
       <KanbanContext.Provider value={context}>
         <DndContext
+          // dnd-kit's own ids come off a module counter that drifts between the server and
+          // client render, which hydration-warns on the `aria-describedby` of every card.
+          id={dndId}
           sensors={sensors}
           collisionDetection={closestCorners}
           accessibility={{ announcements, screenReaderInstructions }}
@@ -345,4 +416,4 @@ const Kanban = React.forwardRef<HTMLDivElement, KanbanProps>(
 )
 Kanban.displayName = "Kanban"
 
-export { Kanban, moveItem, type KanbanColumn, type KanbanItem, type KanbanProps }
+export { Kanban, kanbanKeyboardCoordinates, moveItem, type KanbanColumn, type KanbanItem, type KanbanProps }

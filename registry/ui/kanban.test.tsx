@@ -1,7 +1,7 @@
 import { act, render, screen, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
-import type { DragEndEvent } from "@dnd-kit/core"
-import { Kanban, moveItem, type KanbanColumn } from "./kanban"
+import type { DragEndEvent, SensorContext } from "@dnd-kit/core"
+import { Kanban, kanbanKeyboardCoordinates, moveItem, type KanbanColumn } from "./kanban"
 
 // happy-dom has no layout engine: every rect is 0x0, so dnd-kit's keyboard sensor can
 // never resolve a neighbouring droppable and a real keyboard drag is a no-op. We keep the
@@ -306,5 +306,101 @@ describe("Kanban onChange", () => {
     rerender(<Kanban columns={board()} onChange={onChange} disabled />)
     drop("t1", "done")
     expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe("kanbanKeyboardCoordinates", () => {
+  // Synthetic board geometry — three columns side by side, cards stacked in each.
+  // happy-dom measures nothing, so the rects dnd-kit would hand the getter are supplied here.
+  const box = (left: number, top: number, width: number, height: number) => ({
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+  })
+
+  const RECTS: Record<string, ReturnType<typeof box>> = {
+    todo: box(0, 0, 240, 300),
+    t1: box(8, 40, 224, 60),
+    t2: box(8, 110, 224, 60),
+    doing: box(260, 0, 240, 300),
+    d1: box(268, 40, 224, 60),
+    done: box(520, 0, 240, 300),
+  }
+
+  const OWNER: Record<string, string> = { t1: "todo", t2: "todo", d1: "doing" }
+
+  const context = (overId: string | null) => {
+    const entries = Object.keys(RECTS).map((id) => ({
+      id,
+      data: {
+        current: OWNER[id]
+          ? { type: "item", columnId: OWNER[id] }
+          : { type: "column" },
+      },
+    }))
+    const containers = Object.assign(new Map(entries.map((entry) => [entry.id, entry])), {
+      getEnabled: () => entries,
+    })
+    return {
+      droppableContainers: containers,
+      droppableRects: new Map(Object.entries(RECTS)),
+      over: overId ? { id: overId } : null,
+    } as unknown as SensorContext
+  }
+
+  const press = (code: string, overId: string | null, activeId = "t1") => {
+    const event = new KeyboardEvent("keydown", { code, cancelable: true })
+    const coordinates = kanbanKeyboardCoordinates(event, {
+      active: activeId,
+      currentCoordinates: { x: 0, y: 0 },
+      context: context(overId),
+    })
+    return { coordinates, event }
+  }
+
+  const origin = (id: string) => ({ x: RECTS[id].left, y: RECTS[id].top })
+
+  it("moves to the previous and next card in the column", () => {
+    expect(press("ArrowDown", "t1").coordinates).toEqual(origin("t2"))
+    expect(press("ArrowUp", "t2").coordinates).toEqual(origin("t1"))
+  })
+
+  it("targets the card below the last one so the end of a column is reachable", () => {
+    expect(press("ArrowDown", "t2").coordinates).toEqual({
+      x: RECTS.t2.left,
+      y: RECTS.t2.top + RECTS.t2.height,
+    })
+  })
+
+  it("moves left into the previous column at the same slot", () => {
+    expect(press("ArrowLeft", "d1").coordinates).toEqual(origin("t1"))
+  })
+
+  it("moves right into the next column at the same slot", () => {
+    expect(press("ArrowRight", "t1").coordinates).toEqual(origin("d1"))
+  })
+
+  it("targets an empty column's own droppable", () => {
+    expect(press("ArrowRight", "d1").coordinates).toEqual(origin("done"))
+  })
+
+  it("falls back to the dragged card's own slot when nothing is hovered yet", () => {
+    expect(press("ArrowDown", null, "t1").coordinates).toEqual(origin("t2"))
+  })
+
+  it("stays put at the edges of the board", () => {
+    expect(press("ArrowUp", "t1").coordinates).toBeUndefined()
+    expect(press("ArrowLeft", "t1").coordinates).toBeUndefined()
+    expect(press("ArrowRight", "done", "d1").coordinates).toBeUndefined()
+  })
+
+  it("keeps hold of arrow keys but ignores everything else", () => {
+    expect(press("ArrowDown", "t1").event.defaultPrevented).toBe(true)
+    const space = press("Space", "t1")
+    expect(space.coordinates).toBeUndefined()
+    expect(space.event.defaultPrevented).toBe(false)
   })
 })

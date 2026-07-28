@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { format } from "date-fns"
-import { describe, expect, it, vi } from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import {
   EventCalendar,
   EventCalendarGrid,
@@ -92,6 +92,58 @@ describe("layoutWeekEvents", () => {
     expect(onPrevDay[0].height).toBe(2 * 48)
 
     expect(layoutWeekEvents(events, d(2026, 0, 16))).toHaveLength(0)
+  })
+})
+
+// Day boundaries must be calendar days, not `+24h`: America/New_York has a 25-hour day on
+// 2026-11-01 (DST ends) and a 23-hour day on 2027-03-14 (DST starts). The TZ is pinned for this
+// block only — the rest of the file builds "today" dates in the machine's real zone.
+describe("DST day boundaries", () => {
+  // Node only re-reads the zone on assignment: `delete process.env.TZ` is a no-op and assigning
+  // `undefined` stringifies to "undefined" (→ GMT). Capture the resolved zone and assign it back,
+  // or the pinned zone leaks into every later test file sharing this worker.
+  const realTz = process.env.TZ ?? Intl.DateTimeFormat().resolvedOptions().timeZone
+  beforeAll(() => {
+    process.env.TZ = "America/New_York"
+  })
+  afterAll(() => {
+    process.env.TZ = realTz
+  })
+
+  it("keeps a late event on the 25-hour fall-back day instead of dropping it", () => {
+    // Sanity: the pinned zone really does make 2026-11-01 a 25-hour day.
+    expect((d(2026, 10, 2).getTime() - d(2026, 10, 1).getTime()) / 3_600_000).toBe(25)
+
+    const events: CalendarEvent[] = [
+      { id: "late", title: "Late shift", start: d(2026, 10, 1, 23, 30), end: d(2026, 10, 2, 0, 0) },
+    ]
+    expect(layoutWeekEvents(events, d(2026, 10, 1)).map((l) => l.event.id)).toEqual(["late"])
+    expect(layoutWeekEvents(events, d(2026, 10, 2))).toHaveLength(0)
+
+    render(
+      <EventCalendar defaultDate={d(2026, 10, 1)} events={events}>
+        <EventCalendarGrid />
+      </EventCalendar>
+    )
+    expect(within(cellFor("2026-11-01")!).getByRole("button", { name: /Late shift/ })).toBeInTheDocument()
+  })
+
+  it("does not pull a next-day event onto the 23-hour spring-forward day", () => {
+    expect((d(2027, 2, 15).getTime() - d(2027, 2, 14).getTime()) / 3_600_000).toBe(23)
+
+    const events: CalendarEvent[] = [
+      { id: "early", title: "Early flight", start: d(2027, 2, 15, 0, 30), end: d(2027, 2, 15, 1, 0) },
+    ]
+    expect(layoutWeekEvents(events, d(2027, 2, 14))).toHaveLength(0)
+    expect(layoutWeekEvents(events, d(2027, 2, 15)).map((l) => l.event.id)).toEqual(["early"])
+
+    render(
+      <EventCalendar defaultDate={d(2027, 2, 14)} events={events}>
+        <EventCalendarGrid />
+      </EventCalendar>
+    )
+    expect(within(cellFor("2027-03-14")!).queryByRole("button", { name: /Early flight/ })).toBeNull()
+    expect(within(cellFor("2027-03-15")!).getByRole("button", { name: /Early flight/ })).toBeInTheDocument()
   })
 })
 

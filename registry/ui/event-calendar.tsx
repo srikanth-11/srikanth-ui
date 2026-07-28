@@ -42,7 +42,6 @@ interface PositionedEvent {
 const HOUR_HEIGHT = 48
 const MIN_EVENT_HEIGHT = 16
 const MAX_CHIPS_PER_DAY = 3
-const DAY_MS = 86_400_000
 const HOUR_MS = 3_600_000
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const NO_EVENTS: CalendarEvent[] = []
@@ -63,11 +62,17 @@ const isValidDate = (value: unknown): value is Date =>
 const isValidEvent = (event: CalendarEvent) =>
   isValidDate(event?.start) && isValidDate(event?.end) && event.end.getTime() >= event.start.getTime()
 
-/** True when the event covers any part of the day starting at `dayStart` (ms). Zero-length events count on their own day. */
-function overlapsDay(event: CalendarEvent, dayStart: number) {
+/**
+ * True when the event covers any part of `day`. Zero-length events count on their own day.
+ * Bounds come from the calendar day, not `+24h` — DST days are 23 or 25 hours long and a
+ * fixed offset drops or duplicates events at the boundary.
+ */
+function overlapsDay(event: CalendarEvent, day: Date) {
+  const dayStart = startOfDay(day).getTime()
+  const dayEnd = startOfDay(addDays(day, 1)).getTime()
   const s = event.start.getTime()
   const e = event.end.getTime()
-  return s < dayStart + DAY_MS && (e > dayStart || (e === s && s >= dayStart))
+  return s < dayEnd && (e > dayStart || (e === s && s >= dayStart))
 }
 
 const dateKey = (date: Date) => format(date, "yyyy-MM-dd")
@@ -86,9 +91,9 @@ function getMonthGridDays(date: Date, weekStartsOn: WeekStart = 0): Date[] {
  */
 function layoutWeekEvents(events: CalendarEvent[], day: Date): PositionedEvent[] {
   const dayStart = startOfDay(day).getTime()
-  const dayEnd = dayStart + DAY_MS
+  const dayEnd = startOfDay(addDays(day, 1)).getTime()
   const clipped = events
-    .filter((event) => !event.allDay && isValidEvent(event) && overlapsDay(event, dayStart))
+    .filter((event) => !event.allDay && isValidEvent(event) && overlapsDay(event, day))
     .map((event) => ({
       event,
       s: Math.max(event.start.getTime(), dayStart),
@@ -137,9 +142,8 @@ function layoutWeekEvents(events: CalendarEvent[], day: Date): PositionedEvent[]
 
 /** Events touching `day`, all-day first then by start. Returns a new array — never mutates the prop. */
 function eventsForDay(events: CalendarEvent[], day: Date): CalendarEvent[] {
-  const dayStart = startOfDay(day).getTime()
   return events
-    .filter((event) => overlapsDay(event, dayStart))
+    .filter((event) => overlapsDay(event, day))
     .sort(
       (a, b) => Number(!!b.allDay) - Number(!!a.allDay) || a.start.getTime() - b.start.getTime()
     )
@@ -552,23 +556,20 @@ const WeekGrid = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
           >
             all-day
           </div>
-          {days.map((day) => {
-            const dayStart = startOfDay(day).getTime()
-            return (
-              <div
-                key={dateKey(day)}
-                role="gridcell"
-                data-date={dateKey(day)}
-                className="min-h-7 flex-1 space-y-0.5 border-s p-0.5"
-              >
-                {events
-                  .filter((event) => event.allDay && overlapsDay(event, dayStart))
-                  .map((event) => (
-                    <EventChip key={event.id} event={event} onEventClick={onEventClick} />
-                  ))}
-              </div>
-            )
-          })}
+          {days.map((day) => (
+            <div
+              key={dateKey(day)}
+              role="gridcell"
+              data-date={dateKey(day)}
+              className="min-h-7 flex-1 space-y-0.5 border-s p-0.5"
+            >
+              {events
+                .filter((event) => event.allDay && overlapsDay(event, day))
+                .map((event) => (
+                  <EventChip key={event.id} event={event} onEventClick={onEventClick} />
+                ))}
+            </div>
+          ))}
         </div>
 
         <div role="row" className="flex max-h-[480px] overflow-y-auto">

@@ -90,6 +90,19 @@ describe("TourProvider", () => {
     expect(dialog).toHaveAccessibleName("The sidebar")
   })
 
+  it("cuts the spotlight out of the dim shape itself, not with a mask", () => {
+    render(<Harness />)
+    click("Start")
+
+    // A <mask> only hides paint — Chromium still hit-tests the hidden area, so the
+    // spotlighted element would swallow clicks. The hole has to be geometry.
+    const dim = overlay()!.querySelector("path")
+    expect(overlay()!.querySelector("mask")).toBeNull()
+    expect(dim).toHaveAttribute("fill-rule", "evenodd")
+    // Outer box first, then the cutout as a second subpath (happy-dom rects are 0×0).
+    expect(dim?.getAttribute("d")?.match(/M/g)).toHaveLength(2)
+  })
+
   it("Next and Back walk the steps", () => {
     render(<Harness />)
     click("Start")

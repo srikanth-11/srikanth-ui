@@ -61,6 +61,25 @@ function getSpotlightRect(
 
 const ZERO: SpotlightRect = { x: 0, y: 0, width: 0, height: 0 }
 
+/**
+ * Path for the dim overlay: a box larger than any viewport, minus a rounded
+ * cutout, as one `fill-rule="evenodd"` shape.
+ *
+ * The hole has to be part of the geometry, not a `<mask>`: a mask only hides
+ * paint, and Chromium still hit-tests the masked-out area — the spotlighted
+ * element would look exposed but swallow every click. An even-odd hole is a
+ * real hole for painting and pointer events alike.
+ */
+function spotlightPath({ x, y, width, height }: SpotlightRect, radius = PADDING): string {
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2))
+  const arc = `a${r},${r} 0 0 1`
+  return (
+    `M0,0H99999V99999H0Z` +
+    `M${x + r},${y}h${width - 2 * r}${arc} ${r},${r}v${height - 2 * r}${arc} ${-r},${r}` +
+    `h${2 * r - width}${arc} ${-r},${-r}v${2 * r - height}${arc} ${r},${-r}Z`
+  )
+}
+
 // Radix only calls `getBoundingClientRect()` on its anchor, so a plain object is
 // enough — DOMRect's class identity is never used.
 function toDomRect({ x, y, width, height }: SpotlightRect): DOMRect {
@@ -146,8 +165,6 @@ function TourProvider({ steps, storageKey, children }: TourProviderProps) {
   const returnFocusRef = React.useRef<HTMLElement | null>(null)
   const titleId = React.useId()
   const descriptionId = React.useId()
-  // Colons from useId are legal in ids but awkward inside `url(#…)`.
-  const maskId = `tour-mask-${React.useId().replace(/:/g, "")}`
 
   // Bad steps are dropped, never thrown on: a step needs an id and a selector,
   // and ids must be unique so React keys and warnings stay meaningful.
@@ -311,25 +328,11 @@ function TourProvider({ steps, storageKey, children }: TourProviderProps) {
               aria-hidden="true"
               className="pointer-events-none fixed inset-0 z-50 h-full w-full"
             >
-              <defs>
-                <mask id={maskId}>
-                  <rect width="100%" height="100%" fill="white" />
-                  <rect
-                    x={rect.x}
-                    y={rect.y}
-                    width={rect.width}
-                    height={rect.height}
-                    rx={PADDING}
-                    fill="black"
-                  />
-                </mask>
-              </defs>
               {/* Only the painted dim area takes pointer events, so clicks land on
                   the highlighted target and nowhere else. */}
-              <rect
-                width="100%"
-                height="100%"
-                mask={`url(#${maskId})`}
+              <path
+                d={spotlightPath(rect)}
+                fillRule="evenodd"
                 className="pointer-events-auto fill-black/50"
               />
             </svg>

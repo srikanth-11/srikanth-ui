@@ -86,6 +86,14 @@
       "files": [{ "path": "registry/ui/kanban.tsx", "type": "registry:ui" }],
       "dependencies": ["@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities"],
       "registryDependencies": ["card", "badge"]
+    },
+    {
+      "name": "onboarding-tour",
+      "type": "registry:ui",
+      "title": "Onboarding Tour",
+      "description": "Guided product tour with an SVG spotlight overlay, popover step cards, missing-target skipping, focus return, and optional localStorage completion.",
+      "files": [{ "path": "registry/ui/onboarding-tour.tsx", "type": "registry:ui" }],
+      "registryDependencies": ["popover", "button"]
     }
   ]
 }

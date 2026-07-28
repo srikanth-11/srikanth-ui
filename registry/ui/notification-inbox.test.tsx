@@ -329,6 +329,44 @@ describe("NotificationInbox interactions", () => {
   })
 })
 
+describe("NotificationInbox href", () => {
+  const linked = (href: string): Notification[] => [
+    { id: "a", title: "Build failed", timestamp: ago(MINUTE), read: false, href },
+  ]
+
+  it.each(["/inbox/1", "https://example.com/x", "mailto:ada@example.com", "tel:+15550123", "#latest"])(
+    "renders %s as a real link",
+    async (href) => {
+      await openInbox({ notifications: linked(href) })
+
+      expect(within(panel()).getByRole("link", { name: /^Unread Build failed/ })).toHaveAttribute(
+        "href",
+        href
+      )
+    }
+  )
+
+  it.each([
+    " JaVaScRiPt:alert(document.cookie)",
+    "java\tscript:alert(1)",
+    "javascript:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "vbscript:msgbox(1)",
+  ])("refuses %s and falls back to a plain button", async (href) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const onItemClick = vi.fn()
+    const user = await openInbox({ notifications: linked(href), onItemClick })
+
+    expect(within(panel()).queryByRole("link")).not.toBeInTheDocument()
+    expect(panel().querySelector("[href]")).toBeNull()
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"a"'))
+
+    // The row is still a working notification, just not a navigable one.
+    await user.click(rowButton("Build failed"))
+    expect(onItemClick).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe("NotificationInbox renderItem", () => {
   it("replaces the default row entirely", async () => {
     await openInbox({

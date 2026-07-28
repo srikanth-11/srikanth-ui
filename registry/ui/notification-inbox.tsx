@@ -38,6 +38,36 @@ const AGO_FORMAT = new Intl.RelativeTimeFormat(undefined, {
   style: "narrow",
 })
 
+const warn = (message: string) => {
+  if (process.env.NODE_ENV !== "production") console.warn(message)
+}
+
+const SAFE_SCHEME = /^(https?|mailto|tel):/i
+/** A leading scheme, i.e. a colon before any path, query or fragment starts. */
+const HAS_SCHEME = /^[^/?#]*:/
+
+/**
+ * `href` back when it is safe to put in an `<a>`, `undefined` when it isn't.
+ *
+ * Notifications are server- or user-authored data, so the scheme is a trust
+ * boundary: `javascript:`, `data:` and `vbscript:` all execute on click. Only
+ * relative URLs and the http/https/mailto/tel schemes get through; anything else
+ * is dropped with a dev warning and the row degrades to a plain button.
+ *
+ * Control characters and whitespace are stripped before the check because
+ * browsers ignore them when resolving a scheme — " JaVaScRiPt:" and
+ * "java\tscript:" both navigate.
+ */
+function safeHref(href: unknown, id: string): string | undefined {
+  if (typeof href !== "string" || href === "") return undefined
+  const bare = href.replace(/[\x00-\x20]/g, "")
+  if (!HAS_SCHEME.test(bare) || SAFE_SCHEME.test(bare)) return href
+  warn(
+    `NotificationInbox: dropped an unsafe href on notification "${id}" — only relative, http:, https:, mailto: and tel: links are allowed.`
+  )
+  return undefined
+}
+
 const msOf = (value: unknown) =>
   value instanceof Date && Number.isFinite(value.getTime()) ? value.getTime() : Number.NaN
 
@@ -116,15 +146,16 @@ function NotificationRow({
   onActivate: (item: Notification) => void
   onDismiss?: (id: string) => void
 }) {
-  // A row with an href is a real link, so it keeps middle-click and "open in new
-  // tab"; without one it is a button. Both are focusable and Enter-activated.
-  const Row: React.ElementType = item.href ? "a" : "button"
+  // A row with a safe href is a real link, so it keeps middle-click and "open in
+  // new tab"; without one it is a button. Both are focusable and Enter-activated.
+  const href = safeHref(item.href, item.id)
+  const Row: React.ElementType = href ? "a" : "button"
   const stamp = formatRelativeTime(item.timestamp, now)
 
   return (
     <>
       <Row
-        {...(item.href ? { href: item.href } : { type: "button" })}
+        {...(href ? { href } : { type: "button" })}
         onClick={() => onActivate(item)}
         className={cn(
           "flex min-w-0 flex-1 items-start gap-2 rounded-md p-2 text-start transition-colors",
@@ -219,8 +250,8 @@ const NotificationInbox = React.forwardRef<HTMLButtonElement, NotificationInboxP
         else dropped.push(item?.id ?? "<no id>")
         return ok
       })
-      if (dropped.length > 0 && process.env.NODE_ENV !== "production") {
-        console.warn(
+      if (dropped.length > 0) {
+        warn(
           `NotificationInbox: ignoring ${dropped.length} notification(s) with a missing title or a missing/duplicate id: ${dropped.join(", ")}`
         )
       }

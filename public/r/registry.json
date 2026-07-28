@@ -68,6 +68,15 @@
       "description": "SSR-safe cookie banner with per-category preferences dialog, versioned localStorage consent, and a getStoredConsent helper.",
       "files": [{ "path": "registry/ui/cookie-consent.tsx", "type": "registry:ui" }],
       "registryDependencies": ["button", "card", "dialog", "switch", "label"]
+    },
+    {
+      "name": "event-calendar",
+      "type": "registry:ui",
+      "title": "Event Calendar",
+      "description": "Month and week calendar with event chips, overlap-aware week layout, keyboard-navigable day grid, and controlled or uncontrolled view and date.",
+      "files": [{ "path": "registry/ui/event-calendar.tsx", "type": "registry:ui" }],
+      "dependencies": ["date-fns"],
+      "registryDependencies": ["button"]
     }
   ]
 }

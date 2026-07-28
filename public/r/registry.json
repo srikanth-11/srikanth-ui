@@ -94,6 +94,14 @@
       "description": "Guided product tour with an SVG spotlight overlay, popover step cards, missing-target skipping, focus return, and optional localStorage completion.",
       "files": [{ "path": "registry/ui/onboarding-tour.tsx", "type": "registry:ui" }],
       "registryDependencies": ["popover", "button"]
+    },
+    {
+      "name": "notification-inbox",
+      "type": "registry:ui",
+      "title": "Notification Inbox",
+      "description": "Bell trigger with a capped unread badge opening a tabbed popover of notifications, with relative timestamps, per-row dismiss, and mark-all-as-read.",
+      "files": [{ "path": "registry/ui/notification-inbox.tsx", "type": "registry:ui" }],
+      "registryDependencies": ["popover", "button", "badge", "tabs"]
     }
   ]
 }

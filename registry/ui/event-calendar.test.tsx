@@ -78,6 +78,18 @@ describe("layoutWeekEvents", () => {
     ])
   })
 
+  it("skips junk entries instead of throwing", () => {
+    const valid: CalendarEvent = {
+      id: "a",
+      title: "A",
+      start: d(2026, 0, 15, 9, 0),
+      end: d(2026, 0, 15, 10, 0),
+    }
+    const junk = [null, undefined, {}, { id: "x", title: "X" }] as unknown as CalendarEvent[]
+    const laid = layoutWeekEvents([...junk, valid], day)
+    expect(laid.map((l) => l.event.id)).toEqual(["a"])
+  })
+
   it("clips an event that spans midnight to the requested day", () => {
     const events: CalendarEvent[] = [
       { id: "n", title: "Night shift", start: d(2026, 0, 14, 22, 0), end: d(2026, 0, 15, 1, 0) },

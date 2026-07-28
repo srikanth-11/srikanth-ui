@@ -93,7 +93,7 @@ function layoutWeekEvents(events: CalendarEvent[], day: Date): PositionedEvent[]
   const dayStart = startOfDay(day).getTime()
   const dayEnd = startOfDay(addDays(day, 1)).getTime()
   const clipped = events
-    .filter((event) => !event.allDay && isValidEvent(event) && overlapsDay(event, day))
+    .filter((event) => isValidEvent(event) && !event.allDay && overlapsDay(event, day))
     .map((event) => ({
       event,
       s: Math.max(event.start.getTime(), dayStart),

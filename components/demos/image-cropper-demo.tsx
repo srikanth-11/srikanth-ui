@@ -4,20 +4,9 @@ import type { Area } from "react-easy-crop"
 import { Button } from "@/components/ui/button"
 import { getCroppedImage, ImageCropper } from "@/registry/ui/image-cropper"
 
-// Inline SVG data URI: no network fetch, no CORS, works offline and under a
-// strict CSP. Encoded whole so the `url(#g)` fill reference survives.
-const SRC = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="rgb(59,130,246)"/>
-      <stop offset="1" stop-color="rgb(139,92,246)"/>
-    </linearGradient></defs>
-    <rect width="480" height="480" fill="url(#g)"/>
-    <circle cx="150" cy="150" r="86" fill="rgb(255,255,255)" fill-opacity="0.35"/>
-    <rect x="250" y="270" width="170" height="140" rx="24" fill="rgb(255,255,255)" fill-opacity="0.5"/>
-    <text x="240" y="245" text-anchor="middle" font-family="sans-serif" font-size="30" fill="rgb(255,255,255)">drag · zoom · rotate</text>
-  </svg>`
-)}`
+// Bundled same-origin photo: a real subject makes framing meaningful, and
+// same-origin keeps the crop canvas untainted.
+const SRC = "/demo/crop-sample.jpg"
 
 export function ImageCropperDemo() {
   // Rotation rides along with the area — getCroppedImage needs both, since the
@@ -33,33 +22,41 @@ export function ImageCropperDemo() {
 
   return (
     <div className="w-full max-w-sm space-y-3">
+      <ol className="text-muted-foreground list-decimal ps-4 text-xs leading-relaxed">
+        <li>Drag the photo to frame the part you want</li>
+        <li>Fine-tune with the zoom and rotate sliders</li>
+        <li>Press Crop to get the result</li>
+      </ol>
       <ImageCropper
         src={SRC}
         aspect={1}
         rotate
         onCropComplete={(area, rotation) => setCrop({ area, rotation })}
       />
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!crop}
-          onClick={() => {
-            if (!crop) return
-            getCroppedImage(SRC, crop.area, { rotation: crop.rotation })
-              .then((blob) => setPreview(URL.createObjectURL(blob)))
-              .catch(() => setPreview(null))
-          }}
-        >
-          Crop
-        </Button>
-        {preview ? (
-          // eslint-disable-next-line @next/next/no-img-element -- runtime blob URL, nothing for next/image to optimise
-          <img src={preview} alt="Cropped result" className="size-10 rounded-md border" />
-        ) : (
-          <p className="text-muted-foreground text-xs">Crop returns a Blob</p>
-        )}
-      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!crop}
+        onClick={() => {
+          if (!crop) return
+          getCroppedImage(SRC, crop.area, { rotation: crop.rotation })
+            .then((blob) => setPreview(URL.createObjectURL(blob)))
+            .catch(() => setPreview(null))
+        }}
+      >
+        Crop
+      </Button>
+      {preview ? (
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element -- runtime blob URL, nothing for next/image to optimise */}
+          <img src={preview} alt="Cropped result" className="size-24 rounded-md border" />
+          <a href={preview} download="cropped.png" className="text-sm underline underline-offset-4">
+            Download
+          </a>
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-xs">Your cropped image appears here</p>
+      )}
     </div>
   )
 }

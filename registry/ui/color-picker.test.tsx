@@ -102,7 +102,38 @@ describe("ColorPicker", () => {
     expect(onChange).not.toHaveBeenCalled()
     expect(input).toHaveValue("zzz")
     expect(input).toHaveAttribute("aria-invalid", "true")
-    expect(screen.getByRole("alert")).toHaveTextContent(/enter a valid hex color/i)
+    const alert = screen.getByRole("alert")
+    expect(alert).toHaveTextContent(/enter a valid hex color/i)
+    expect(alert.id).toBeTruthy()
+    expect(input.getAttribute("aria-describedby")).toBe(alert.id)
+  })
+
+  it("ColorPickerInput: nothing is described while the field is valid", () => {
+    render(
+      <ColorPicker value="#ff0000" onChange={vi.fn()}>
+        <ColorPickerInput />
+      </ColorPicker>
+    )
+    const input = screen.getByRole("textbox", { name: "Hex color" })
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(input).not.toHaveAttribute("aria-describedby")
+  })
+
+  it("ColorPickerInput: showErrorMessage=false keeps aria-invalid without a description", async () => {
+    const user = userEvent.setup()
+    render(
+      <ColorPicker value="#ff0000" onChange={vi.fn()} showErrorMessage={false}>
+        <ColorPickerInput />
+      </ColorPicker>
+    )
+    const input = screen.getByRole("textbox", { name: "Hex color" })
+    await user.clear(input)
+    await user.type(input, "zzz")
+    await user.tab()
+    expect(input).toHaveAttribute("aria-invalid", "true")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    // No message rendered, so nothing to point aria-describedby at.
+    expect(input).not.toHaveAttribute("aria-describedby")
   })
 
   it("ColorPickerInput: valid hex + Enter commits via onChange", async () => {

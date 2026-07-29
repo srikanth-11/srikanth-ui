@@ -77,16 +77,45 @@ describe("TimePicker", () => {
     expect(input).toHaveValue("09")
   })
 
-  it("error prop sets aria-invalid on all segments and renders an alert", () => {
-    render(
-      <TimePicker value={at(9, 30)} onChange={() => {}} error="Required">
+  it("error prop sets aria-invalid on all segments and describes them by the alert", () => {
+    const segments = (
+      <>
         <TimePickerInput unit="hours" />
         <TimePickerInput unit="minutes" />
+        <TimePickerPeriod />
+      </>
+    )
+    const { rerender } = render(
+      <TimePicker value={at(9, 30)} onChange={() => {}} hourCycle={12} error="Required">
+        {segments}
       </TimePicker>
     )
-    expect(screen.getByLabelText("Hours")).toHaveAttribute("aria-invalid", "true")
-    expect(screen.getByLabelText("Minutes")).toHaveAttribute("aria-invalid", "true")
-    expect(screen.getByRole("alert")).toHaveTextContent("Required")
+    const controls = [
+      screen.getByLabelText("Hours"),
+      screen.getByLabelText("Minutes"),
+      screen.getByRole("button", { name: /AM/ }),
+    ]
+    const alert = screen.getByRole("alert")
+    expect(alert).toHaveTextContent("Required")
+    expect(alert.id).toBeTruthy()
+    for (const control of controls) {
+      expect(control).toHaveAttribute("aria-invalid", "true")
+      expect(control.getAttribute("aria-describedby")).toBe(alert.id)
+    }
+
+    rerender(
+      <TimePicker
+        value={at(9, 30)}
+        onChange={() => {}}
+        hourCycle={12}
+        error="Required"
+        showErrorMessage={false}
+      >
+        {segments}
+      </TimePicker>
+    )
+    // No message rendered, so nothing to point aria-describedby at.
+    expect(screen.getByLabelText("Hours")).not.toHaveAttribute("aria-describedby")
   })
 
   it("no error by default", () => {
@@ -95,7 +124,9 @@ describe("TimePicker", () => {
         <TimePickerInput unit="hours" />
       </TimePicker>
     )
-    expect(screen.getByLabelText("Hours")).toHaveAttribute("aria-invalid", "false")
+    const hours = screen.getByLabelText("Hours")
+    expect(hours).toHaveAttribute("aria-invalid", "false")
+    expect(hours).not.toHaveAttribute("aria-describedby")
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 })

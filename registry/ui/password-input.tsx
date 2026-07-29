@@ -30,8 +30,10 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
         onErrorChange?.(next)
       }
     }
+    const errorId = React.useId()
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
+    const showError = isInvalid && showErrorMessage !== false
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       if (validate) emitError(validate(e.target.value) ?? null)
@@ -46,6 +48,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
             type={visible ? "text" : "password"}
             disabled={disabled}
             aria-invalid={isInvalid}
+            aria-describedby={showError ? errorId : undefined}
             className={cn("pe-10", className)}
             onBlur={handleBlur}
             {...props}
@@ -63,8 +66,8 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
             {visible ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
           </Button>
         </div>
-        {isInvalid && showErrorMessage !== false && (
-          <p role="alert" className="text-destructive mt-1.5 text-xs">
+        {showError && (
+          <p id={errorId} role="alert" className="text-destructive mt-1.5 text-xs">
             {displayError}
           </p>
         )}

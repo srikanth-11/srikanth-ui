@@ -22,6 +22,12 @@ export function InstallCommand({ name }: { name: string }) {
       >
         {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
       </Button>
+      {/* The tick is the sighted confirmation; a screen reader gets nothing from an
+          icon swap inside a button whose name never changes. Sibling of the button
+          so it stays out of that name. */}
+      <span aria-live="polite" className="sr-only">
+        {copied ? "Copied" : ""}
+      </span>
     </div>
   )
 }

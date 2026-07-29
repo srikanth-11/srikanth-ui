@@ -128,3 +128,47 @@
     @apply font-sans;
   }
 }
+
+/* The landing wall links to /components#<name>. The browser scrolls, but a card
+   that looks like its eleven neighbours is not an answer to "which one?" — so the
+   card marks itself. CSS only: the gallery needs no state for this. */
+article:target {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* Both landing animations live inside the query rather than carrying a
+   motion-reduce override: with no `.reveal` rule at all the hero is simply
+   already in place, which is the correct static state, not a suppressed one. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes landing-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes gradient-drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(0, -4%, 0) scale(1.08);
+    }
+  }
+
+  /* `backwards` holds the from-state through the stagger delay; without it every
+     revealed block flashes at full opacity first. */
+  .reveal {
+    animation: landing-reveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .drift {
+    animation: gradient-drift 22s ease-in-out infinite;
+  }
+}

@@ -39,10 +39,31 @@ const NO_MODAL_DEMO = new Set(["onboarding-tour"])
 
 type Filter = ComponentCategory | "all"
 
+/**
+ * The name in `location.hash`, for the card that should mark itself.
+ *
+ * `:target` would be free, but it is never set here: a wall tile on the landing
+ * page is a soft navigation, and pushState does not update the document's target
+ * element — only a real fragment navigation or a history traversal does. Reading
+ * the hash on mount covers both entry paths (a soft nav mounts this component,
+ * a direct load renders it), and `hashchange` covers back/forward between cards.
+ */
+function useHashHighlight() {
+  const [name, setName] = React.useState("")
+  React.useEffect(() => {
+    const read = () => setName(window.location.hash.slice(1))
+    read()
+    window.addEventListener("hashchange", read)
+    return () => window.removeEventListener("hashchange", read)
+  }, [])
+  return name
+}
+
 export function ComponentGallery() {
   const [query, setQuery] = React.useState("")
   const [category, setCategory] = React.useState<Filter>("all")
   const [selected, setSelected] = React.useState<string | null>(null)
+  const highlight = useHashHighlight()
   // Radix restores focus to a DialogTrigger, and these cards are not triggers
   // (one Dialog serves the whole grid), so the opening card is remembered here.
   const trigger = React.useRef<HTMLButtonElement | null>(null)
@@ -108,11 +129,12 @@ export function ComponentGallery() {
               entries={matches.filter((item) => item.category === value)}
               onOpen={open}
               openName={selected}
+              highlight={highlight}
             />
           </section>
         ))
       ) : (
-        <Grid entries={matches} onOpen={open} openName={selected} />
+        <Grid entries={matches} onOpen={open} openName={selected} highlight={highlight} />
       )}
 
       <Dialog open={entry !== undefined} onOpenChange={(isOpen) => !isOpen && setSelected(null)}>
@@ -167,11 +189,14 @@ function Grid({
   entries,
   onOpen,
   openName,
+  highlight,
 }: {
   entries: typeof registryMeta
   onOpen: (name: string, card: HTMLButtonElement) => void
   /** The entry showing in the modal — its card preview stands down while it is. */
   openName: string | null
+  /** The entry named by the URL hash, if any — it rings itself so the scroll lands somewhere. */
+  highlight: string
 }) {
   return (
     <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -179,6 +204,7 @@ function Grid({
         <article
           key={name}
           id={name}
+          data-highlight={highlight === name ? "" : undefined}
           className="bg-card hover:border-ring relative flex scroll-mt-32 flex-col rounded-xl border p-4 transition-colors motion-reduce:transition-none"
         >
           <LazyPreview previewHeightClass={WIDE.has(name) ? "h-64" : "h-40"}>

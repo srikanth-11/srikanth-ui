@@ -82,6 +82,23 @@ describe("ComponentGallery", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
     await waitFor(() => expect(card).toHaveFocus())
   })
+
+  it("marks the card named by the hash, on mount and on hashchange", () => {
+    // A wall tile on the landing page navigates with pushState, which leaves
+    // `:target` unset — so the mark is an attribute the gallery writes itself.
+    window.location.hash = "#kanban"
+    render(<ComponentGallery />)
+    expect(document.getElementById("kanban")).toHaveAttribute("data-highlight")
+
+    act(() => {
+      window.location.hash = "#color-picker"
+      window.dispatchEvent(new Event("hashchange"))
+    })
+    expect(document.getElementById("color-picker")).toHaveAttribute("data-highlight")
+    expect(document.getElementById("kanban")).not.toHaveAttribute("data-highlight")
+
+    window.location.hash = ""
+  })
 })
 
 describe("LazyPreview", () => {

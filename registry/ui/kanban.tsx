@@ -148,7 +148,12 @@ const kanbanKeyboardCoordinates: KeyboardCoordinateGetter = (event, { active, co
   if (!target) return
   // Past the last card there is no rect to align with — sit one card-height lower.
   const below = nextSlot === nextCards.length && nextCards.length > 0
-  return { x: target.left, y: target.top + (below ? target.height : 0) }
+  // Otherwise bottom-align a dragged card taller than its target, the way dnd-kit's own
+  // getter does. Top-aligning would push the dragged center past the target's midpoint,
+  // which `handleDragEnd` reads as "insert after" — on a board with uneven card heights
+  // that makes slot 0 of another column unreachable by keyboard.
+  const overhang = below ? 0 : Math.max(0, (context.collisionRect?.height ?? 0) - target.height)
+  return { x: target.left, y: target.top + (below ? target.height : -overhang) }
 }
 
 const screenReaderInstructions: ScreenReaderInstructions = {

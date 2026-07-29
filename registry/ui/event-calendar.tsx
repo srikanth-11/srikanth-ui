@@ -86,10 +86,12 @@ function getMonthGridDays(date: Date, weekStartsOn: WeekStart = 0): Date[] {
 /**
  * Positions the timed events of `day` for the week view: clipped to the day,
  * `top`/`height` in px (48px/hour), overlapping events split into columns by a
- * greedy first-fit pass per overlap cluster.
+ * greedy first-fit pass per overlap cluster. Bad data is dropped, never thrown on:
+ * a non-array lays out nothing, and junk entries are filtered.
  * ponytail: greedy, not optimal packing — a long event can widen its whole cluster.
  */
 function layoutWeekEvents(events: CalendarEvent[], day: Date): PositionedEvent[] {
+  if (!Array.isArray(events)) return []
   const dayStart = startOfDay(day).getTime()
   const dayEnd = startOfDay(addDays(day, 1)).getTime()
   const clipped = events

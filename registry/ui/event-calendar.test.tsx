@@ -90,6 +90,12 @@ describe("layoutWeekEvents", () => {
     expect(laid.map((l) => l.event.id)).toEqual(["a"])
   })
 
+  it("returns an empty layout when events is not an array", () => {
+    for (const bad of [null, undefined, "nope", 42, { length: 2 }]) {
+      expect(layoutWeekEvents(bad as unknown as CalendarEvent[], day)).toEqual([])
+    }
+  })
+
   it("clips an event that spans midnight to the requested day", () => {
     const events: CalendarEvent[] = [
       { id: "n", title: "Night shift", start: d(2026, 0, 14, 22, 0), end: d(2026, 0, 15, 1, 0) },

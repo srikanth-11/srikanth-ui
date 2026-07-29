@@ -406,12 +406,30 @@ describe("kanbanKeyboardCoordinates", () => {
     expect(press("ArrowRight", "todo").coordinates).toEqual(end)
   })
 
-  it("does not bottom-align a move within a column", () => {
+  // Bottom-aligning is keyed on the column the dragged card came FROM, because that is what
+  // the drop handler's midpoint test is keyed on. The next three pin the three combinations.
+  it("does not bottom-align a move within the dragged card's own column", () => {
     // The returned point repositions the dragged rect, so the next keypress's collision
     // detection runs from there — an overhang subtracted here would pull `over` back onto
     // the card above, or onto the dragged card itself. The drop handler's midpoint test is
-    // gated on crossing columns, so within a column the alignment buys nothing anyway.
+    // gated on crossing columns, so within the origin column the alignment buys nothing.
     expect(press("ArrowDown", "t1", "t1", box(8, 40, 224, 120)).coordinates).toEqual(origin("t2"))
+  })
+
+  it("does not bottom-align a move back into the dragged card's own column", () => {
+    // Hovering `doing`, ArrowLeft returns to `todo`, where the dragged card still sits — the
+    // target here is the dragged card itself, and an overhang would stall the drag on it.
+    expect(press("ArrowLeft", "d1", "t1", box(8, 40, 224, 120)).coordinates).toEqual(origin("t1"))
+  })
+
+  it("bottom-aligns a move within a column the dragged card did not come from", () => {
+    // Dragged out of `doing`, now moving down inside `todo`: still a cross-column drop, so
+    // the midpoint test is live and a taller card must stay above t2's midpoint to land on it.
+    const tall = box(268, 40, 224, 120)
+    expect(press("ArrowDown", "t1", "d1", tall).coordinates).toEqual({
+      x: RECTS.t2.left,
+      y: RECTS.t2.top - (tall.height - RECTS.t2.height),
+    })
   })
 
   // The getter's coordinates feed straight into the drop handler's midpoint test, so slot 0

@@ -64,6 +64,9 @@ interface Ctx {
   setHsva: (next: Hsva) => void
   disabled?: boolean
   isInvalid: boolean
+  /** Id of the rendered error message, or undefined when none is shown. The hex field
+   * points its `aria-describedby` at it — the root div is never focused. */
+  errorId?: string
   validate?: (value: string) => React.ReactNode | null
   emitError: (next: React.ReactNode | null) => void
 }
@@ -118,8 +121,15 @@ function useTrackPct(disabled: boolean | undefined, onPct: (pct: number) => void
 
 interface ColorPickerProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange" | "defaultValue"> {
+  /**
+   * Controlled hex (`#rrggbb` or `#rrggbbaa`). Passing it makes the picker controlled:
+   * it renders what you pass and never forks state, so pair it with `onChange` or the
+   * picker is read-only (dev-warned). An unparseable value is ignored, never thrown on.
+   */
   value?: string
+  /** Uncontrolled initial hex. Ignored once `value` is provided. Defaults to `#000000`. */
   defaultValue?: string
+  /** Fires with the new hex on every committed change (drag, swatch, valid hex entry). */
   onChange?: (hex: string) => void
   disabled?: boolean
   /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
@@ -194,8 +204,10 @@ const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       },
       [onErrorChange]
     )
+    const errorId = React.useId()
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
+    const showError = isInvalid && showErrorMessage !== false
 
     const setHsva = React.useCallback(
       (next: Hsva) => {
@@ -208,12 +220,21 @@ const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
     return (
       <ColorPickerContext.Provider
-        value={{ hsva: currentHsva, hex, setHsva, disabled, isInvalid, validate, emitError }}
+        value={{
+          hsva: currentHsva,
+          hex,
+          setHsva,
+          disabled,
+          isInvalid,
+          errorId: showError ? errorId : undefined,
+          validate,
+          emitError,
+        }}
       >
         <div ref={ref} className={cn("flex flex-col gap-3", className)} {...props}>
           {children}
-          {isInvalid && showErrorMessage !== false && (
-            <p role="alert" className="text-destructive mt-1.5 text-xs">
+          {showError && (
+            <p id={errorId} role="alert" className="text-destructive mt-1.5 text-xs">
               {displayError}
             </p>
           )}
@@ -430,7 +451,7 @@ const ColorPickerInput = React.forwardRef<
   HTMLInputElement,
   Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue" | "onChange">
 >(({ className, onFocus, onBlur, onKeyDown, ...props }, ref) => {
-  const { hex, setHsva, disabled, isInvalid, validate, emitError } = useColorPicker()
+  const { hex, setHsva, disabled, isInvalid, errorId, validate, emitError } = useColorPicker()
   const [editing, setEditing] = React.useState(false)
   const [text, setText] = React.useState(hex)
 
@@ -468,6 +489,7 @@ const ColorPickerInput = React.forwardRef<
       aria-label="Hex color"
       disabled={disabled}
       aria-invalid={isInvalid}
+      aria-describedby={errorId}
       value={currentlyEditing ? text : hex}
       onFocus={(e) => {
         setText(hex)

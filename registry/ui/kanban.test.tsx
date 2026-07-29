@@ -64,13 +64,18 @@ const rect = (top: number, height = 40) => ({
   right: 200,
 })
 
-const dropAt = (activeId: string, overId: string, activeTop: number, overTop: number) =>
+type Box = { top: number; left: number; width: number; height: number; bottom: number; right: number }
+
+const dropRects = (activeId: string, overId: string, activeRect: Box, overRect: Box) =>
   act(() => {
     dnd.onDragEnd?.({
-      active: { id: activeId, rect: { current: { translated: rect(activeTop) } } },
-      over: { id: overId, rect: rect(overTop) },
+      active: { id: activeId, rect: { current: { translated: activeRect } } },
+      over: { id: overId, rect: overRect },
     } as unknown as DragEndEvent)
   })
+
+const dropAt = (activeId: string, overId: string, activeTop: number, overTop: number) =>
+  dropRects(activeId, overId, rect(activeTop), rect(overTop))
 
 describe("moveItem", () => {
   it("reorders within a column", () => {
@@ -332,7 +337,7 @@ describe("kanbanKeyboardCoordinates", () => {
 
   const OWNER: Record<string, string> = { t1: "todo", t2: "todo", d1: "doing" }
 
-  const context = (overId: string | null) => {
+  const context = (overId: string | null, collisionRect: Box) => {
     const entries = Object.keys(RECTS).map((id) => ({
       id,
       data: {
@@ -348,15 +353,21 @@ describe("kanbanKeyboardCoordinates", () => {
       droppableContainers: containers,
       droppableRects: new Map(Object.entries(RECTS)),
       over: overId ? { id: overId } : null,
+      collisionRect,
     } as unknown as SensorContext
   }
 
-  const press = (code: string, overId: string | null, activeId = "t1") => {
+  const press = (
+    code: string,
+    overId: string | null,
+    activeId = "t1",
+    collisionRect: Box = RECTS[activeId]
+  ) => {
     const event = new KeyboardEvent("keydown", { code, cancelable: true })
     const coordinates = kanbanKeyboardCoordinates(event, {
       active: activeId,
       currentCoordinates: { x: 0, y: 0 },
-      context: context(overId),
+      context: context(overId, collisionRect),
     })
     return { coordinates, event }
   }
@@ -385,6 +396,63 @@ describe("kanbanKeyboardCoordinates", () => {
 
   it("targets an empty column's own droppable", () => {
     expect(press("ArrowRight", "d1").coordinates).toEqual(origin("done"))
+  })
+
+  it("clamps the slot when the next column is shorter", () => {
+    // Slot 1 of `todo` into one-card `doing`: clamps to that column's end slot, no crash.
+    const end = { x: RECTS.d1.left, y: RECTS.d1.top + RECTS.d1.height }
+    expect(press("ArrowRight", "t2").coordinates).toEqual(end)
+    // Hovering `todo` itself is its end slot (2) — clamps the same way.
+    expect(press("ArrowRight", "todo").coordinates).toEqual(end)
+  })
+
+  // Bottom-aligning is keyed on the column the dragged card came FROM, because that is what
+  // the drop handler's midpoint test is keyed on. The next three pin the three combinations.
+  it("does not bottom-align a move within the dragged card's own column", () => {
+    // The returned point repositions the dragged rect, so the next keypress's collision
+    // detection runs from there — an overhang subtracted here would pull `over` back onto
+    // the card above, or onto the dragged card itself. The drop handler's midpoint test is
+    // gated on crossing columns, so within the origin column the alignment buys nothing.
+    expect(press("ArrowDown", "t1", "t1", box(8, 40, 224, 120)).coordinates).toEqual(origin("t2"))
+  })
+
+  it("does not bottom-align a move back into the dragged card's own column", () => {
+    // Hovering `doing`, ArrowLeft returns to `todo`, where the dragged card still sits — the
+    // target here is the dragged card itself, and an overhang would stall the drag on it.
+    expect(press("ArrowLeft", "d1", "t1", box(8, 40, 224, 120)).coordinates).toEqual(origin("t1"))
+  })
+
+  it("bottom-aligns a move within a column the dragged card did not come from", () => {
+    // Dragged out of `doing`, now moving down inside `todo`: still a cross-column drop, so
+    // the midpoint test is live and a taller card must stay above t2's midpoint to land on it.
+    const tall = box(268, 40, 224, 120)
+    expect(press("ArrowDown", "t1", "d1", tall).coordinates).toEqual({
+      x: RECTS.t2.left,
+      y: RECTS.t2.top - (tall.height - RECTS.t2.height),
+    })
+  })
+
+  // The getter's coordinates feed straight into the drop handler's midpoint test, so slot 0
+  // of another column is only reachable if a dragged card taller than the card sitting there
+  // still lands with its center above that card's midpoint. `over` is pinned to "d1" here —
+  // the collision step that resolves it is not exercised.
+  it("keeps slot 0 of another column reachable for a card taller than the card there", () => {
+    const tall = box(8, 40, 224, 120)
+    const { coordinates } = press("ArrowRight", "t1", "t1", tall)
+    expect(coordinates).toBeDefined()
+    const onChange = vi.fn()
+    render(<Kanban columns={board()} onChange={onChange} />)
+    dropRects(
+      "t1",
+      "d1",
+      { ...tall, top: coordinates!.y, bottom: coordinates!.y + tall.height },
+      RECTS.d1
+    )
+    expect(ids(onChange.mock.calls[0][0])).toEqual([
+      ["todo", ["t2"]],
+      ["doing", ["t1", "d1"]],
+      ["done", []],
+    ])
   })
 
   it("falls back to the dragged card's own slot when nothing is hovered yet", () => {

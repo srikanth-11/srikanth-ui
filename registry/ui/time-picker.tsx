@@ -11,6 +11,9 @@ interface Ctx {
   setDate: (d: Date) => void
   hourCycle: 12 | 24
   isInvalid: boolean
+  /** Id of the rendered error message, or undefined when none is shown. Every segment
+   * points its `aria-describedby` at it — the group wrapper is never focused. */
+  errorId?: string
 }
 
 const TimePickerContext = React.createContext<Ctx | null>(null)
@@ -70,6 +73,8 @@ const TimePicker = React.forwardRef<HTMLDivElement, TimePickerProps>(
     const isControlled = value !== undefined
     const date = isControlled ? value : internal
     const isInvalid = !!error
+    const errorId = React.useId()
+    const showError = isInvalid && showErrorMessage !== false
 
     if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
       console.warn("TimePicker: `value` without `onChange` — component is read-only.")
@@ -84,12 +89,14 @@ const TimePicker = React.forwardRef<HTMLDivElement, TimePickerProps>(
     )
 
     return (
-      <TimePickerContext.Provider value={{ date, setDate, hourCycle, isInvalid }}>
+      <TimePickerContext.Provider
+        value={{ date, setDate, hourCycle, isInvalid, errorId: showError ? errorId : undefined }}
+      >
         <div ref={ref} role="group" className={cn("flex items-center gap-1", className)} {...props}>
           {children}
         </div>
-        {isInvalid && showErrorMessage !== false && (
-          <p role="alert" className="text-destructive mt-1.5 text-xs">
+        {showError && (
+          <p id={errorId} role="alert" className="text-destructive mt-1.5 text-xs">
             {error}
           </p>
         )}
@@ -108,7 +115,7 @@ interface TimePickerInputProps
 
 const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>(
   ({ unit, className, onKeyDown, ...props }, ref) => {
-    const { date, setDate, hourCycle, isInvalid } = useTimePicker()
+    const { date, setDate, hourCycle, isInvalid, errorId } = useTimePicker()
     const buffer = React.useRef<string>("")
     const display = String(getUnit(date, unit, hourCycle)).padStart(2, "0")
     const max = unit === "hours" ? (hourCycle === 12 ? 12 : 23) : 59
@@ -149,6 +156,7 @@ const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>
         aria-valuemin={unit === "hours" ? (hourCycle === 12 ? 1 : 0) : 0}
         aria-valuemax={max}
         aria-invalid={isInvalid}
+        aria-describedby={errorId}
         value={display}
         onChange={() => {}}
         onKeyDown={handleKeyDown}
@@ -168,7 +176,7 @@ const TimePickerPeriod = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
 >(({ className, ...props }, ref) => {
-  const { date, setDate, hourCycle, isInvalid } = useTimePicker()
+  const { date, setDate, hourCycle, isInvalid, errorId } = useTimePicker()
   if (hourCycle !== 12) return null
   const pm = date.getHours() >= 12
   const toggle = () => {
@@ -184,6 +192,7 @@ const TimePickerPeriod = React.forwardRef<
       size="sm"
       aria-label={pm ? "PM, toggle to AM" : "AM, toggle to PM"}
       aria-invalid={isInvalid}
+      aria-describedby={errorId}
       onClick={toggle}
       className={cn("w-12 font-mono", className)}
       {...props}

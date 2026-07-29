@@ -90,6 +90,12 @@ describe("layoutWeekEvents", () => {
     expect(laid.map((l) => l.event.id)).toEqual(["a"])
   })
 
+  it("returns an empty layout when events is not an array", () => {
+    for (const bad of [null, undefined, "nope", 42, { length: 2 }]) {
+      expect(layoutWeekEvents(bad as unknown as CalendarEvent[], day)).toEqual([])
+    }
+  })
+
   it("clips an event that spans midnight to the requested day", () => {
     const events: CalendarEvent[] = [
       { id: "n", title: "Night shift", start: d(2026, 0, 14, 22, 0), end: d(2026, 0, 15, 1, 0) },
@@ -184,6 +190,19 @@ describe("EventCalendar month view", () => {
     await userEvent.click(screen.getByRole("button", { name: "+2 more" }))
     expect(onViewChange).toHaveBeenCalledWith("week")
     expect(document.querySelector('[data-view="week"]')).toBeTruthy()
+  })
+
+  it("renders an empty month with a dev warning when events is not an array", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    render(
+      <EventCalendar defaultDate={d(2026, 0, 15)} events={null as unknown as CalendarEvent[]}>
+        <EventCalendarGrid />
+      </EventCalendar>
+    )
+    expect(document.querySelectorAll('[role="gridcell"]')).toHaveLength(42)
+    expect(cellFor(d(2026, 0, 15))).toBeInTheDocument()
+    expect(warn.mock.calls.flat().join(" ")).toContain("not an array")
+    warn.mockRestore()
   })
 
   it("fires onEventClick and filters invalid events with a dev warning", async () => {

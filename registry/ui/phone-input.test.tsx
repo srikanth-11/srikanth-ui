@@ -142,11 +142,28 @@ describe("PhoneInput", () => {
     expect(screen.queryByText(/India/i)).not.toBeInTheDocument()
   })
 
-  it("error prop displays a custom message and sets aria-invalid", () => {
-    render(<PhoneInput defaultCountry="US" error="custom" />)
+  it("error prop displays a custom message, sets aria-invalid and describes the input by it", () => {
+    const { rerender } = render(<PhoneInput defaultCountry="US" error="custom" />)
     const input = screen.getByRole("textbox", { name: /phone number/i })
     expect(input).toHaveAttribute("aria-invalid", "true")
-    expect(screen.getByRole("alert")).toHaveTextContent("custom")
+    const alert = screen.getByRole("alert")
+    expect(alert).toHaveTextContent("custom")
+    expect(alert.id).toBeTruthy()
+    expect(input.getAttribute("aria-describedby")).toBe(alert.id)
+
+    rerender(<PhoneInput defaultCountry="US" error="custom" showErrorMessage={false} />)
+    const quiet = screen.getByRole("textbox", { name: /phone number/i })
+    expect(quiet).toHaveAttribute("aria-invalid", "true")
+    // No message rendered, so nothing to point aria-describedby at.
+    expect(quiet).not.toHaveAttribute("aria-describedby")
+  })
+
+  it("no error by default: no alert and nothing described", () => {
+    render(<PhoneInput defaultCountry="US" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(input).not.toHaveAttribute("aria-describedby")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
   it("validate prop replaces the default validator", async () => {

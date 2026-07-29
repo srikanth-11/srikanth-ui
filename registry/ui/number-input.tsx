@@ -80,8 +80,10 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         onErrorChange?.(next)
       }
     }
+    const errorId = React.useId()
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
+    const showError = isInvalid && showErrorMessage !== false
 
     if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
       console.warn("NumberInput: `value` without `onChange` — component is read-only.")
@@ -208,6 +210,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           aria-valuemin={min === Number.MIN_SAFE_INTEGER ? undefined : min}
           aria-valuemax={max === Number.MAX_SAFE_INTEGER ? undefined : max}
           aria-invalid={isInvalid}
+          aria-describedby={showError ? errorId : undefined}
           value={display}
           disabled={disabled}
           onFocus={(e) => {
@@ -244,8 +247,8 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           <PlusIcon className="size-4" />
         </Button>
       </div>
-      {isInvalid && showErrorMessage !== false && (
-        <p role="alert" className="text-destructive mt-1.5 text-xs">
+      {showError && (
+        <p id={errorId} role="alert" className="text-destructive mt-1.5 text-xs">
           {displayError}
         </p>
       )}

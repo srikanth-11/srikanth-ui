@@ -25,16 +25,27 @@ describe("PasswordInput", () => {
     expect(input).toHaveAttribute("type", "password")
   })
 
-  it("error prop sets aria-invalid and renders an alert", () => {
-    render(<PasswordInput aria-label="Password" error="Too short" />)
+  it("error prop sets aria-invalid, renders an alert, and describes the input by it", () => {
+    const { rerender } = render(<PasswordInput aria-label="Password" error="Too short" />)
     const input = screen.getByLabelText("Password")
     expect(input).toHaveAttribute("aria-invalid", "true")
-    expect(screen.getByRole("alert")).toHaveTextContent("Too short")
+    const alert = screen.getByRole("alert")
+    expect(alert).toHaveTextContent("Too short")
+    expect(alert.id).toBeTruthy()
+    expect(input.getAttribute("aria-describedby")).toBe(alert.id)
+
+    rerender(<PasswordInput aria-label="Password" error="Too short" showErrorMessage={false} />)
+    const quiet = screen.getByLabelText("Password")
+    expect(quiet).toHaveAttribute("aria-invalid", "true")
+    // No message rendered, so nothing to point aria-describedby at.
+    expect(quiet).not.toHaveAttribute("aria-describedby")
   })
 
   it("no error by default", () => {
     render(<PasswordInput aria-label="Password" />)
-    expect(screen.getByLabelText("Password")).toHaveAttribute("aria-invalid", "false")
+    const input = screen.getByLabelText("Password")
+    expect(input).toHaveAttribute("aria-invalid", "false")
+    expect(input).not.toHaveAttribute("aria-describedby")
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 })

@@ -148,7 +148,20 @@ const kanbanKeyboardCoordinates: KeyboardCoordinateGetter = (event, { active, co
   if (!target) return
   // Past the last card there is no rect to align with — sit one card-height lower.
   const below = nextSlot === nextCards.length && nextCards.length > 0
-  return { x: target.left, y: target.top + (below ? target.height : 0) }
+  // Landing in a column the card did not come from, bottom-align a dragged card taller than
+  // its target, the way dnd-kit's own getter does. Top-aligning would push the dragged center
+  // past the target's midpoint, which `handleDragEnd` reads as "insert after" — on a board
+  // with uneven card heights that makes slot 0 of another column unreachable by keyboard.
+  //
+  // Keyed on the card's ORIGIN column, not the hovered one, because that is what the drop
+  // handler's midpoint test is keyed on; the two only agree until the first cross-column
+  // keypress. Back in its own column the card must stay top-aligned: the midpoint test is
+  // dead there, and the returned point also repositions the dragged rect for the next
+  // keypress's collision detection, where an overhang can stall the drag on the card itself.
+  const activeColumnId = droppableContainers.get(active)?.data.current?.columnId ?? columnId
+  const bottomAlign = !below && nextColumnId !== activeColumnId
+  const overhang = bottomAlign ? Math.max(0, (context.collisionRect?.height ?? 0) - target.height) : 0
+  return { x: target.left, y: target.top + (below ? target.height : -overhang) }
 }
 
 const screenReaderInstructions: ScreenReaderInstructions = {

@@ -41,10 +41,17 @@ function countryName(code: string) {
 
 interface PhoneInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "defaultValue"> {
+  /**
+   * Controlled value, E.164 (`+14155550123`). Passing it makes the input controlled:
+   * it renders what you pass and never forks state, so pair it with `onChange` or the
+   * field is read-only (dev-warned). The country is re-derived from it as it changes.
+   */
   value?: string
   /** Uncontrolled initial value, E.164. Ignored if `value` is provided. */
   defaultValue?: string
   defaultCountry?: CountryCode
+  /** Fires with the E.164 value on every edit — partial numbers included, and `""` when
+   * empty — so it can be fed straight back into `value` without an echo loop. */
   onChange?: (e164: string) => void
   onCountryChange?: (country: CountryCode) => void
   /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
@@ -108,8 +115,10 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         onErrorChange?.(next)
       }
     }
+    const errorId = React.useId()
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
+    const showError = isInvalid && showErrorMessage !== false
 
     if (process.env.NODE_ENV !== "production" && value !== undefined && !onChange) {
       console.warn("PhoneInput: `value` without `onChange` — component is read-only.")
@@ -282,6 +291,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           aria-label="Phone number"
           autoComplete="tel-national"
           aria-invalid={isInvalid}
+          aria-describedby={showError ? errorId : undefined}
           value={national}
           onChange={handleInput}
           onBlur={handleBlur}
@@ -289,8 +299,8 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           {...props}
         />
       </div>
-      {isInvalid && showErrorMessage !== false && (
-        <p role="alert" className="text-destructive mt-1.5 text-xs">
+      {showError && (
+        <p id={errorId} role="alert" className="text-destructive mt-1.5 text-xs">
           {displayError}
         </p>
       )}

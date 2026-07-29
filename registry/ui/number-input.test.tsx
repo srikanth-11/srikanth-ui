@@ -53,6 +53,19 @@ describe("NumberInput", () => {
     await userEvent.tab()
     expect(input).toHaveAttribute("aria-invalid", "true")
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    // No message rendered, so nothing to point aria-describedby at.
+    expect(input).not.toHaveAttribute("aria-describedby")
+  })
+
+  it("describes the input by the error message while it is shown", async () => {
+    render(<NumberInput min={0} max={100} onChange={vi.fn()} aria-label="Qty" />)
+    const input = screen.getByLabelText("Qty")
+    expect(input).not.toHaveAttribute("aria-describedby")
+    await userEvent.type(input, "250")
+    await userEvent.tab()
+    const alert = screen.getByRole("alert")
+    expect(alert.id).toBeTruthy()
+    expect(input.getAttribute("aria-describedby")).toBe(alert.id)
   })
 
   it("correcting via a stepper after a blur error clears the stale error and display", async () => {

@@ -27,7 +27,25 @@ const EVENTS: CalendarEvent[] = [
   { id: "offsite", title: "Company offsite", start: at(2, 0), end: at(2, 23, 59), allDay: true },
 ]
 
+// Hoisted so the store identity is stable across renders — it never emits, the two
+// snapshots below are the whole point.
+const neverChanges = () => () => {}
+
 export function EventCalendarDemo() {
+  // Both the seeds above and the calendar's own default date come off `new Date()`, so the
+  // prerendered HTML carries the build day's month label and today marker. Every page view
+  // on a later day would hydration-mismatch (recoverable, but a console error a day). The
+  // server snapshot is false and the client one is true, so the server HTML and the
+  // hydrating render are the same empty box and the calendar arrives right after.
+  const mounted = React.useSyncExternalStore(
+    neverChanges,
+    () => true,
+    () => false
+  )
+
+  // Toolbar + a six-row month grid, so swapping the calendar in doesn't shift the page.
+  if (!mounted) return <div aria-hidden className="h-[41rem] w-full" />
+
   return (
     <EventCalendar events={EVENTS} className="w-full">
       <EventCalendarToolbar />

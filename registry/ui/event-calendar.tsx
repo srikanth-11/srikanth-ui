@@ -233,7 +233,11 @@ const EventCalendar = React.forwardRef<HTMLDivElement, EventCalendarProps>(
 
     // Bad data is dropped, never thrown on — the calendar still renders.
     const validEvents = React.useMemo(() => {
-      const invalid = events.filter((event) => !isValidEvent(event))
+      const list = Array.isArray(events) ? events : []
+      if (process.env.NODE_ENV !== "production" && !Array.isArray(events)) {
+        console.warn("EventCalendar: `events` is not an array — rendering an empty calendar.")
+      }
+      const invalid = list.filter((event) => !isValidEvent(event))
       if (process.env.NODE_ENV !== "production" && invalid.length > 0) {
         console.warn(
           `EventCalendar: ignoring ${invalid.length} invalid event(s) (missing dates or end before start): ${invalid
@@ -241,7 +245,7 @@ const EventCalendar = React.forwardRef<HTMLDivElement, EventCalendarProps>(
             .join(", ")}`
         )
       }
-      return invalid.length > 0 ? events.filter(isValidEvent) : events
+      return invalid.length > 0 ? list.filter(isValidEvent) : list
     }, [events])
 
     const value = React.useMemo(

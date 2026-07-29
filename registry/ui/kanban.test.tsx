@@ -406,9 +406,18 @@ describe("kanbanKeyboardCoordinates", () => {
     expect(press("ArrowRight", "todo").coordinates).toEqual(end)
   })
 
+  it("does not bottom-align a move within a column", () => {
+    // The returned point repositions the dragged rect, so the next keypress's collision
+    // detection runs from there — an overhang subtracted here would pull `over` back onto
+    // the card above, or onto the dragged card itself. The drop handler's midpoint test is
+    // gated on crossing columns, so within a column the alignment buys nothing anyway.
+    expect(press("ArrowDown", "t1", "t1", box(8, 40, 224, 120)).coordinates).toEqual(origin("t2"))
+  })
+
   // The getter's coordinates feed straight into the drop handler's midpoint test, so slot 0
   // of another column is only reachable if a dragged card taller than the card sitting there
-  // still lands with its center above that card's midpoint. Proven end to end.
+  // still lands with its center above that card's midpoint. `over` is pinned to "d1" here —
+  // the collision step that resolves it is not exercised.
   it("keeps slot 0 of another column reachable for a card taller than the card there", () => {
     const tall = box(8, 40, 224, 120)
     const { coordinates } = press("ArrowRight", "t1", "t1", tall)

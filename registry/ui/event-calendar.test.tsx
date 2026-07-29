@@ -192,6 +192,19 @@ describe("EventCalendar month view", () => {
     expect(document.querySelector('[data-view="week"]')).toBeTruthy()
   })
 
+  it("renders an empty month with a dev warning when events is not an array", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    render(
+      <EventCalendar defaultDate={d(2026, 0, 15)} events={null as unknown as CalendarEvent[]}>
+        <EventCalendarGrid />
+      </EventCalendar>
+    )
+    expect(document.querySelectorAll('[role="gridcell"]')).toHaveLength(42)
+    expect(cellFor(d(2026, 0, 15))).toBeInTheDocument()
+    expect(warn.mock.calls.flat().join(" ")).toContain("not an array")
+    warn.mockRestore()
+  })
+
   it("fires onEventClick and filters invalid events with a dev warning", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
     const onEventClick = vi.fn()

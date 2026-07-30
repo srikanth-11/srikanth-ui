@@ -70,6 +70,24 @@ describe("ComponentGallery", () => {
     )
   })
 
+  it("prints the image-cropper steps once — its demo already renders that list", async () => {
+    const user = userEvent.setup()
+    render(<ComponentGallery />)
+    const cropper = registryMeta.find((entry) => entry.name === "image-cropper")!
+
+    await user.click(screen.getByRole("button", { name: "Open Image Cropper preview" }))
+
+    // The demo prints these three above the cropper, so the modal's own "How to
+    // use" list stands down for this one component. Counting rather than merely
+    // finding is the point: it fails both if the duplication comes back and if
+    // the skip ever swallows steps nothing else renders.
+    const dialog = await screen.findByRole("dialog")
+    for (const step of cropper.howToUse) {
+      expect(within(dialog).getAllByText(step), step).toHaveLength(1)
+    }
+    expect(within(dialog).queryByRole("heading", { name: /how to use/i })).toBeNull()
+  })
+
   it("Escape closes the modal and focus returns to the opening card", async () => {
     const user = userEvent.setup()
     render(<ComponentGallery />)

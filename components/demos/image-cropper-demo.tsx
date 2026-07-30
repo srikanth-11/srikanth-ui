@@ -50,17 +50,26 @@ export function ImageCropperDemo() {
       >
         Crop
       </Button>
-      {preview ? (
-        <div className="flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element -- runtime blob URL, nothing for next/image to optimise */}
-          <img src={preview} alt="Cropped result" className="size-24 rounded-md border" />
-          <a href={preview} download="cropped.png" className="text-sm underline underline-offset-4">
-            Download
-          </a>
-        </div>
-      ) : (
-        <p className="text-muted-foreground text-xs">Your cropped image appears here</p>
-      )}
+      {/* Live region on the stable wrapper, not on either branch: a region has to
+          be in the DOM before its contents change for the swap to be announced,
+          and pressing Crop is otherwise silent to a screen reader. */}
+      <div aria-live="polite">
+        {preview ? (
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element -- runtime blob URL, nothing for next/image to optimise */}
+            <img src={preview} alt="Cropped result" className="size-24 rounded-md border" />
+            <a
+              href={preview}
+              download="cropped.png"
+              className="text-sm underline underline-offset-4"
+            >
+              Download
+            </a>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-xs">Your cropped image appears here</p>
+        )}
+      </div>
     </div>
   )
 }

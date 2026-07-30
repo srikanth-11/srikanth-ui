@@ -17,6 +17,12 @@ describe("ComponentGallery", () => {
     expect(screen.getByRole("button", { name: "Open Kanban preview" })).toBeInTheDocument()
   })
 
+  it("pins the filter bar below the sticky site header, not under it", () => {
+    render(<ComponentGallery />)
+    // SiteHeader is `sticky top-0` and `h-14`; top-0 here would hide the search box behind it.
+    expect(search().closest("div")).toHaveClass("sticky", "top-14")
+  })
+
   it("search narrows cards and shows the empty state on no match", async () => {
     const user = userEvent.setup()
     render(<ComponentGallery />)

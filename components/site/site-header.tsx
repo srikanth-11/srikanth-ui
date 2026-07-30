@@ -7,7 +7,8 @@ import { GITHUB_URL } from "@/lib/site"
 export function SiteHeader() {
   return (
     <header className="bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-6">
+      {/* gap-4, not gap-6: six children plus px-6 overflow a 375px viewport. */}
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-6">
         <Link href="/" className="font-semibold tracking-tight">
           srikanth/ui
         </Link>

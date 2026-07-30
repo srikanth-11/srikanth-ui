@@ -83,7 +83,8 @@ export function ComponentGallery() {
 
   return (
     <>
-      <div className="bg-background/80 sticky top-0 z-10 -mx-6 mb-8 px-6 py-4 backdrop-blur">
+      {/* top-14, not top-0: the site header is sticky too, and h-14 tall. */}
+      <div className="bg-background/80 sticky top-14 z-10 -mx-6 mb-8 px-6 py-4 backdrop-blur">
         <label htmlFor="gallery-search" className="sr-only">
           Search components
         </label>

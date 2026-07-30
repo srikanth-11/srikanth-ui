@@ -5,6 +5,15 @@ import { CookieConsent } from "@/registry/ui/cookie-consent"
 
 const STORAGE_KEY = "srikanth-ui-demo-consent"
 
+// A consent banner that remembers is right in an app and wrong in a demo: once a
+// visitor has answered, every later visit renders nothing at all. The gallery card
+// mounts this preview inert, so the "Reset stored consent" button below can't be
+// clicked from there — the card would just be an empty box forever. Forget the
+// answer as the module loads, which is before any CookieConsent mounts and reads
+// it, so every page load starts with the banner up. Within the page the choice
+// still sticks, which is the part worth showing.
+if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY)
+
 const CATEGORIES = [
   { id: "necessary", label: "Necessary", description: "Required for the site to work.", required: true },
   { id: "analytics", label: "Analytics", description: "Anonymous usage stats." },

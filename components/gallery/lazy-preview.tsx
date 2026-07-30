@@ -43,7 +43,14 @@ export function LazyPreview({
         <div
           inert
           aria-hidden="true"
-          className="pointer-events-none flex h-full w-full items-center justify-center"
+          // `safe` centring, not plain: a demo taller than the box (the calendar,
+          // the cropper, the consent banner) would otherwise be centred on its
+          // middle and clipped at BOTH ends, so the card showed a slice with no
+          // heading and a row of buttons sawn in half. `safe` falls back to
+          // start-alignment the moment the content overflows, so an oversized
+          // preview reads from its top and only the tail is cut, while
+          // everything that fits stays centred.
+          className="pointer-events-none flex h-full w-full items-center-safe justify-center"
         >
           {children}
         </div>

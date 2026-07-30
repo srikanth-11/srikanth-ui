@@ -113,8 +113,8 @@ export const registryMeta: RegistryMetaEntry[] = [
     description: "Image cropper with zoom and rotation sliders, plus a canvas helper returning a Blob.",
     category: "picker",
     howToUse: [
-      "Drag the photo to frame the part you want",
-      "Fine-tune with the zoom and rotate sliders",
+      "Zoom in with the slider, then drag the photo to frame it",
+      "Straighten it with the rotate slider",
       "Press Crop to get the result",
     ],
     Demo: ImageCropperDemo,

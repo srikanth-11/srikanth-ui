@@ -12,6 +12,19 @@ const CATEGORIES = [
 ]
 
 export function CookieConsentDemo() {
+  // A consent banner that remembers is right in an app and wrong in a demo: once a
+  // visitor has answered, every later mount renders nothing at all. The gallery
+  // card mounts this preview inert, so the "Reset stored consent" button below
+  // can't be clicked from there — the card would just be an empty box. Forget the
+  // answer per mount, not per page load: the gallery unmounts and remounts these
+  // cards as the filters change, with no reload in between. A lazy initialiser is
+  // where that belongs — this render runs before the CookieConsent below mounts
+  // and reads storage, which a parent effect would not. Within one mount the
+  // choice still sticks, which is the part worth showing.
+  React.useState(() => {
+    if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY)
+  })
+
   // Bumped by Reset: the banner reads storage once on mount, so a remount is
   // what brings it back after a choice has been stored.
   const [round, setRound] = React.useState(0)

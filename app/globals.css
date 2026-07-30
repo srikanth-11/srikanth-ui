@@ -128,3 +128,58 @@
     @apply font-sans;
   }
 }
+
+/* Layered so page utilities still outrank these. */
+@layer components {
+  /* The landing wall links to /components#<name>. The browser scrolls, but a card
+     that looks like its eleven neighbours is not an answer to "which one?" — so
+     the card marks itself. Not `:target`: the App Router navigates with
+     pushState, which never updates the document's target element, so the one
+     path that matters (a click from the wall) would light up nothing. The
+     gallery sets the attribute from the hash instead. */
+  [data-highlight] {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+}
+
+/* Both landing animations live inside the query rather than carrying a
+   motion-reduce override: with no `.reveal` rule at all the hero is simply
+   already in place, which is the correct static state, not a suppressed one. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes landing-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes gradient-drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(0, -4%, 0) scale(1.08);
+    }
+  }
+
+  /* In the components layer because the shorthand below resets duration and
+     delay, and the second glow overrides both with utilities — unlayered, this
+     rule would outrank them and the two glows would pulse in lockstep. */
+  @layer components {
+    /* `backwards` holds the from-state through the stagger delay; without it
+       every revealed block flashes at full opacity first. */
+    .reveal {
+      animation: landing-reveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+
+    .drift {
+      animation: gradient-drift 22s ease-in-out infinite;
+    }
+  }
+}

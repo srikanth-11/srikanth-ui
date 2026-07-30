@@ -5,15 +5,6 @@ import { CookieConsent } from "@/registry/ui/cookie-consent"
 
 const STORAGE_KEY = "srikanth-ui-demo-consent"
 
-// A consent banner that remembers is right in an app and wrong in a demo: once a
-// visitor has answered, every later visit renders nothing at all. The gallery card
-// mounts this preview inert, so the "Reset stored consent" button below can't be
-// clicked from there — the card would just be an empty box forever. Forget the
-// answer as the module loads, which is before any CookieConsent mounts and reads
-// it, so every page load starts with the banner up. Within the page the choice
-// still sticks, which is the part worth showing.
-if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY)
-
 const CATEGORIES = [
   { id: "necessary", label: "Necessary", description: "Required for the site to work.", required: true },
   { id: "analytics", label: "Analytics", description: "Anonymous usage stats." },
@@ -21,6 +12,19 @@ const CATEGORIES = [
 ]
 
 export function CookieConsentDemo() {
+  // A consent banner that remembers is right in an app and wrong in a demo: once a
+  // visitor has answered, every later mount renders nothing at all. The gallery
+  // card mounts this preview inert, so the "Reset stored consent" button below
+  // can't be clicked from there — the card would just be an empty box. Forget the
+  // answer per mount, not per page load: the gallery unmounts and remounts these
+  // cards as the filters change, with no reload in between. A lazy initialiser is
+  // where that belongs — this render runs before the CookieConsent below mounts
+  // and reads storage, which a parent effect would not. Within one mount the
+  // choice still sticks, which is the part worth showing.
+  React.useState(() => {
+    if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY)
+  })
+
   // Bumped by Reset: the banner reads storage once on mount, so a remount is
   // what brings it back after a choice has been stored.
   const [round, setRound] = React.useState(0)

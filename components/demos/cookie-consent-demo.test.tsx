@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { cleanup, render, screen } from "@testing-library/react"
+import { beforeEach, describe, expect, it } from "vitest"
+import { CookieConsentDemo } from "./cookie-consent-demo"
 
 const STORAGE_KEY = "srikanth-ui-demo-consent"
 
@@ -9,28 +10,31 @@ const seed = () =>
     JSON.stringify({ version: 1, timestamp: 1, consent: { necessary: true, analytics: true } })
   )
 
-/** Fresh module instance, so the demo's load-time reset runs against this test's storage. */
-async function mount() {
-  vi.resetModules()
-  const { CookieConsentDemo } = await import("./cookie-consent-demo")
-  render(<CookieConsentDemo />)
-}
+const banner = () => screen.queryByRole("region", { name: "Cookie consent" })
 
 describe("CookieConsentDemo", () => {
   beforeEach(() => localStorage.clear())
 
-  it("shows the banner even when a choice from an earlier visit is stored", async () => {
+  it("shows the banner on every mount, not just the first of the page", () => {
+    // Both renders below share one module instance, which is the case that matters:
+    // the gallery unmounts and remounts this card as the filters change and never
+    // reloads the page, so forgetting the stored choice once per module load leaves
+    // the second mount reading it back. The card preview is inert, so its own
+    // "Reset stored consent" button can't undo that — it would just be an empty box.
     seed()
-    await mount()
-    // Without the reset the banner stays hidden forever: the gallery card mounts
-    // this demo inert, so its own "Reset stored consent" button is unclickable
-    // and the preview would be a permanently empty box.
-    expect(screen.getByRole("region", { name: "Cookie consent" })).toBeInTheDocument()
+    render(<CookieConsentDemo />)
+    expect(banner()).toBeInTheDocument()
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+
+    cleanup()
+    seed()
+    render(<CookieConsentDemo />)
+    expect(banner()).toBeInTheDocument()
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
-  it("still shows the banner on a clean visit", async () => {
-    await mount()
-    expect(screen.getByRole("region", { name: "Cookie consent" })).toBeInTheDocument()
+  it("still shows the banner on a clean visit", () => {
+    render(<CookieConsentDemo />)
+    expect(banner()).toBeInTheDocument()
   })
 })

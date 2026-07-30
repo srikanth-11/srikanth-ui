@@ -26,6 +26,13 @@ describe("landing page", () => {
     }
   })
 
+  it("leaves the footer to the layout", () => {
+    render(<Home />)
+    // Asserted in components/site/site-chrome.test.tsx now that SiteFooter is shared.
+    expect(screen.queryByText(/built on shadcn\/ui/i)).toBeNull()
+    expect(screen.queryByRole("contentinfo")).toBeNull()
+  })
+
   it("mounts exactly three showcase demos", () => {
     render(<Home />)
     expect(screen.getAllByTestId("showcase-demo")).toHaveLength(3)

@@ -2,15 +2,15 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { InstallCommand } from "@/components/install-command"
 import { registryMeta } from "@/lib/registry-meta"
-
-export const GITHUB_URL = "https://github.com/srikanth-11/srikanth-ui"
+import { GITHUB_URL } from "@/lib/site"
 
 /** Stagger step, ms. Five blocks land over ~0.4s — a sequence, not a queue. */
 const STEP = 80
 
 export function Hero() {
   return (
-    <section className="relative isolate overflow-hidden px-6 pt-24 pb-20 sm:pt-32 sm:pb-28">
+    // The 56px navbar sits above this now, so the top padding drops by that much.
+    <section className="relative isolate overflow-hidden px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
       <Backdrop />
       <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
         <p

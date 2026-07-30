@@ -2,7 +2,7 @@ import Link from "next/link"
 import { KanbanDemo } from "@/components/demos/kanban-demo"
 import { EventCalendarDemo } from "@/components/demos/event-calendar-demo"
 import { ColorPickerDemo } from "@/components/demos/color-picker-demo"
-import { Hero, GITHUB_URL } from "@/components/landing/hero"
+import { Hero } from "@/components/landing/hero"
 import { registryMeta, SITE_URL } from "@/lib/registry-meta"
 
 const INSTALL = `npx shadcn@latest add ${SITE_URL}/r/time-picker.json`
@@ -96,20 +96,6 @@ export default function Home() {
           </pre>
         </div>
       </section>
-
-      <footer className="border-t">
-        <div className="text-muted-foreground mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-10 text-sm">
-          <span>Built on shadcn/ui.</span>
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-foreground underline underline-offset-4"
-          >
-            GitHub
-          </a>
-        </div>
-      </footer>
     </main>
   )
 }

@@ -1,0 +1,111 @@
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import { Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Kbd } from "@/components/ui/kbd"
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import { CATEGORY_LABELS, type ComponentCategory } from "@/lib/registry-index"
+
+const LABEL = "Search components"
+
+/**
+ * Name/title/category only, passed down from the server. Importing `registryMeta`
+ * here instead would drag all twelve demo components — and dnd-kit, react-easy-crop,
+ * libphonenumber — across the client boundary on every route that renders the header.
+ */
+export interface SearchItem {
+  name: string
+  title: string
+  category: ComponentCategory
+}
+
+export function CommandSearch({ items }: { items: SearchItem[] }) {
+  const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
+  const router = useRouter()
+
+  /** Registry order within a category is the curated one; only the categories are sorted. */
+  const groups = React.useMemo(
+    () =>
+      (Object.keys(CATEGORY_LABELS) as ComponentCategory[]).map((category) => ({
+        category,
+        items: items.filter((entry) => entry.category === category),
+      })),
+    [items]
+  )
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key?.toLowerCase() !== "k" || !(event.metaKey || event.ctrlKey)) return
+      // Firefox/Safari put ⌘K on the address bar; the palette wins on our pages.
+      event.preventDefault()
+      setOpen((wasOpen) => !wasOpen)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
+
+  const go = (name: string) => {
+    setOpen(false)
+    router.push(`/docs/${name}`)
+  }
+
+  return (
+    <>
+      <Button
+        ref={triggerRef}
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="text-muted-foreground justify-start gap-2 font-normal sm:w-56"
+      >
+        <Search />
+        {/* Never dropped, only unread: an icon-only button still needs a name, and
+            the visible label has to lead the accessible one (WCAG 2.5.3). */}
+        <span className="sr-only sm:not-sr-only">Search components…</span>
+        <Kbd className="ml-auto hidden sm:inline-flex">⌘K</Kbd>
+      </Button>
+
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={LABEL}
+        description="Jump to a component's documentation."
+        onCloseAutoFocus={(event) => {
+          // Radix's own handler focuses the `DialogTrigger`, and a palette that
+          // also opens on ⌘K cannot have one — so it focuses nothing and Escape
+          // drops the keyboard user back on the body. preventDefault takes that
+          // handler off, and the button we do have gets the focus instead.
+          event.preventDefault()
+          triggerRef.current?.focus()
+        }}
+      >
+        <Command label={LABEL}>
+          <CommandInput placeholder="Search components…" />
+          <CommandList>
+            <CommandEmpty>No components found.</CommandEmpty>
+            {groups.map(({ category, items: groupItems }) => (
+              <CommandGroup key={category} heading={CATEGORY_LABELS[category]}>
+                {groupItems.map(({ name, title }) => (
+                  // Name in the value so "kanban" and "Kanban" both hit.
+                  <CommandItem key={name} value={`${title} ${name}`} onSelect={() => go(name)}>
+                    {title}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </Command>
+      </CommandDialog>
+    </>
+  )
+}

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Providers } from "@/components/site/providers";
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteHeader } from "@/components/site/site-header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,15 +28,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // next-themes writes the theme class here before paint; React must not diff it.
     <html
       lang="en"
-      className={`dark ${geistSans.variable} ${geistMono.variable} h-full`}
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
       {/* A column flex container stretches its children to the widest one's
           min-content, and `min-width: 0` does not undo that — a demo that means
           to scroll (a board) would drag the whole page past the viewport with it.
-          `w-full` makes the width definite instead of content-driven. */}
-      <body className="min-h-full flex flex-col antialiased [&>*]:w-full">{children}</body>
+          `w-full` makes the width definite instead of content-driven.
+          `[&>main]:flex-1` keeps the shared footer at the bottom on short pages. */}
+      <body className="min-h-full flex flex-col antialiased [&>*]:w-full [&>main]:flex-1">
+        <Providers>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </Providers>
+      </body>
     </html>
   );
 }

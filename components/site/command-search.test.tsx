@@ -9,6 +9,9 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }))
 
 const CATEGORY_HEADINGS = ["Form inputs", "Pickers & canvas", "Widgets", "Overlays"]
 
+/** Exactly what the server header hands down — no Demo components across the boundary. */
+const ITEMS = registryMeta.map(({ name, title, category }) => ({ name, title, category }))
+
 const trigger = () => screen.getByRole("button", { name: /search components/i })
 
 /** Ctrl+K anywhere on the page. Returns false when the handler called preventDefault. */
@@ -20,14 +23,14 @@ beforeEach(() => {
 
 describe("command search trigger", () => {
   it("shows the visible label and the ⌘K hint", () => {
-    render(<CommandSearch />)
+    render(<CommandSearch items={ITEMS} />)
 
     expect(within(trigger()).getByText("Search components…")).toBeInTheDocument()
     expect(within(trigger()).getByText("⌘K")).toBeInTheDocument()
   })
 
   it("puts its visible label inside its accessible name (WCAG 2.5.3)", () => {
-    render(<CommandSearch />)
+    render(<CommandSearch items={ITEMS} />)
 
     // Voice-control users say what they see, so "Search components…" has to lead.
     expect(trigger()).toHaveAccessibleName(/^Search components…/)
@@ -36,7 +39,7 @@ describe("command search trigger", () => {
 
 describe("command palette", () => {
   it("opens on Ctrl+K, swallowing the browser's own shortcut", async () => {
-    render(<CommandSearch />)
+    render(<CommandSearch items={ITEMS} />)
     expect(screen.queryByRole("dialog")).toBeNull()
 
     expect(pressCtrlK()).toBe(false)
@@ -45,7 +48,7 @@ describe("command palette", () => {
   })
 
   it("labels the search input", async () => {
-    render(<CommandSearch />)
+    render(<CommandSearch items={ITEMS} />)
     pressCtrlK()
 
     const dialog = await screen.findByRole("dialog")
@@ -53,7 +56,7 @@ describe("command palette", () => {
   })
 
   it("lists every component grouped under its category label", async () => {
-    render(<CommandSearch />)
+    render(<CommandSearch items={ITEMS} />)
     pressCtrlK()
 
     const dialog = await screen.findByRole("dialog")
@@ -65,7 +68,7 @@ describe("command palette", () => {
 
   it("filters to the matching component as you type", async () => {
     const user = userEvent.setup()
-    render(<CommandSearch />)
+    render(<CommandSearch items={ITEMS} />)
 
     await user.click(trigger())
     await user.type(await screen.findByRole("combobox"), "kan")
@@ -78,7 +81,7 @@ describe("command palette", () => {
 
   it("navigates to the component docs and closes on select", async () => {
     const user = userEvent.setup()
-    render(<CommandSearch />)
+    render(<CommandSearch items={ITEMS} />)
 
     await user.click(trigger())
     await user.type(await screen.findByRole("combobox"), "kan")
@@ -90,7 +93,7 @@ describe("command palette", () => {
 
   it("closes on Escape", async () => {
     const user = userEvent.setup()
-    render(<CommandSearch />)
+    render(<CommandSearch items={ITEMS} />)
 
     await user.click(trigger())
     await screen.findByRole("dialog")
@@ -104,7 +107,7 @@ describe("command palette", () => {
     const add = vi.spyOn(window, "addEventListener")
     const remove = vi.spyOn(window, "removeEventListener")
 
-    const { unmount } = render(<CommandSearch />)
+    const { unmount } = render(<CommandSearch items={ITEMS} />)
     const added = add.mock.calls.filter(([type]) => type === "keydown").map(([, fn]) => fn)
     unmount()
     const removed = remove.mock.calls.filter(([type]) => type === "keydown").map(([, fn]) => fn)

@@ -14,9 +14,10 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { registryMeta, type ComponentCategory } from "@/lib/registry-meta"
+import type { ComponentCategory } from "@/lib/registry-index"
 
-// TODO(Task 3): consume CATEGORY_LABELS from lib/registry-meta.ts
+// TODO(Task 3): consume CATEGORY_LABELS — put it in lib/registry-index.ts, not
+// registry-meta.ts, or the sidebar drags every demo into the client bundle.
 const CATEGORY_LABELS: Record<ComponentCategory, string> = {
   form: "Form inputs",
   picker: "Pickers & canvas",
@@ -26,15 +27,30 @@ const CATEGORY_LABELS: Record<ComponentCategory, string> = {
 
 const LABEL = "Search components"
 
-/** Registry order within a category is the curated one; only the categories are sorted. */
-const GROUPS = (Object.keys(CATEGORY_LABELS) as ComponentCategory[]).map((category) => ({
-  category,
-  items: registryMeta.filter((entry) => entry.category === category),
-}))
+/**
+ * Name/title/category only, passed down from the server. Importing `registryMeta`
+ * here instead would drag all twelve demo components — and dnd-kit, react-easy-crop,
+ * libphonenumber — across the client boundary on every route that renders the header.
+ */
+export interface SearchItem {
+  name: string
+  title: string
+  category: ComponentCategory
+}
 
-export function CommandSearch() {
+export function CommandSearch({ items }: { items: SearchItem[] }) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
+
+  /** Registry order within a category is the curated one; only the categories are sorted. */
+  const groups = React.useMemo(
+    () =>
+      (Object.keys(CATEGORY_LABELS) as ComponentCategory[]).map((category) => ({
+        category,
+        items: items.filter((entry) => entry.category === category),
+      })),
+    [items]
+  )
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -76,9 +92,9 @@ export function CommandSearch() {
           <CommandInput placeholder="Search components…" />
           <CommandList>
             <CommandEmpty>No components found.</CommandEmpty>
-            {GROUPS.map(({ category, items }) => (
+            {groups.map(({ category, items: groupItems }) => (
               <CommandGroup key={category} heading={CATEGORY_LABELS[category]}>
-                {items.map(({ name, title }) => (
+                {groupItems.map(({ name, title }) => (
                   // Name in the value so "kanban" and "Kanban" both hit.
                   <CommandItem key={name} value={`${title} ${name}`} onSelect={() => go(name)}>
                     {title}

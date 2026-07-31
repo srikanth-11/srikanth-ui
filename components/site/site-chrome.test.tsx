@@ -8,7 +8,12 @@ import { SiteHeader } from "./site-header"
 const GITHUB = "https://github.com/srikanth-11/srikanth-ui"
 
 // The header's search is the command palette now, and it reaches for the router.
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
+// usePathname is here for the sidebar's active state (Task 3) — a partial mock of
+// next/navigation fails at the import, not at the call, which reads as a mystery.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/",
+}))
 
 /** next-themes reads matchMedia and writes the class on <html>, so chrome renders below the provider. */
 function renderChrome(ui: React.ReactNode) {

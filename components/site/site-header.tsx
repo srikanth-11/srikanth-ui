@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button"
 import { CommandSearch } from "@/components/site/command-search"
 import { ThemeToggle } from "@/components/site/theme-toggle"
 import { GITHUB_URL } from "@/lib/site"
+import { registryIndex } from "@/lib/registry-index"
+
+// registryIndex, not registryMeta, and read here rather than in the client component:
+// the palette needs three strings per component, and the header is on every route.
+const searchItems = registryIndex.map(({ name, title, category }) => ({ name, title, category }))
 
 export function SiteHeader() {
   return (
@@ -21,7 +26,7 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <CommandSearch />
+          <CommandSearch items={searchItems} />
           <Button asChild variant="ghost" size="icon" aria-label="GitHub">
             <a href={GITHUB_URL} target="_blank" rel="noreferrer">
               <GitHubIcon />

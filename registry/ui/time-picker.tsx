@@ -116,6 +116,9 @@ interface TimePickerInputProps
 const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>(
   ({ unit, className, onKeyDown, ...props }, ref) => {
     const { date, setDate, hourCycle, isInvalid, errorId } = useTimePicker()
+    // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
+    const describedBy =
+      [props["aria-describedby"], errorId].filter(Boolean).join(" ") || undefined
     const buffer = React.useRef<string>("")
     const display = String(getUnit(date, unit, hourCycle)).padStart(2, "0")
     const max = unit === "hours" ? (hourCycle === 12 ? 12 : 23) : 59
@@ -156,7 +159,6 @@ const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>
         aria-valuemin={unit === "hours" ? (hourCycle === 12 ? 1 : 0) : 0}
         aria-valuemax={max}
         aria-invalid={isInvalid}
-        aria-describedby={errorId}
         value={display}
         onChange={() => {}}
         onKeyDown={handleKeyDown}
@@ -166,6 +168,7 @@ const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>
           className
         )}
         {...props}
+        aria-describedby={describedBy}
       />
     )
   }
@@ -178,6 +181,8 @@ const TimePickerPeriod = React.forwardRef<
 >(({ className, ...props }, ref) => {
   const { date, setDate, hourCycle, isInvalid, errorId } = useTimePicker()
   if (hourCycle !== 12) return null
+  // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
+  const describedBy = [props["aria-describedby"], errorId].filter(Boolean).join(" ") || undefined
   const pm = date.getHours() >= 12
   const toggle = () => {
     const d = new Date(date)
@@ -192,10 +197,10 @@ const TimePickerPeriod = React.forwardRef<
       size="sm"
       aria-label={pm ? "PM, toggle to AM" : "AM, toggle to PM"}
       aria-invalid={isInvalid}
-      aria-describedby={errorId}
       onClick={toggle}
       className={cn("w-12 font-mono", className)}
       {...props}
+      aria-describedby={describedBy}
     >
       {pm ? "PM" : "AM"}
     </Button>

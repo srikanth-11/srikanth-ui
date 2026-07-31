@@ -20,7 +20,8 @@ interface NumberInputProps
   format?: Intl.NumberFormatOptions
   locale?: string
   allowWheel?: boolean
-  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  /** External error. Passing it at all (even `null`) takes precedence over the built-in
+   * validation. A truthy value marks the field invalid. */
   error?: React.ReactNode
   /** Replaces the default out-of-range validator. Called on blur with the typed value. */
   validate?: (value: number | null) => React.ReactNode | null
@@ -84,6 +85,10 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
     const showError = isInvalid && showErrorMessage !== false
+    // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
       console.warn("NumberInput: `value` without `onChange` — component is read-only.")
@@ -210,7 +215,6 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           aria-valuemin={min === Number.MIN_SAFE_INTEGER ? undefined : min}
           aria-valuemax={max === Number.MAX_SAFE_INTEGER ? undefined : max}
           aria-invalid={isInvalid}
-          aria-describedby={showError ? errorId : undefined}
           value={display}
           disabled={disabled}
           onFocus={(e) => {
@@ -232,6 +236,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           }}
           className="text-center tabular-nums"
           {...props}
+          aria-describedby={describedBy}
         />
         <Button
           type="button"

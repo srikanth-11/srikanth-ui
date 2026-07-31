@@ -43,6 +43,17 @@ describe("component docs page", () => {
     }
   })
 
+  it("renders both install forms and the one-time namespace setup", async () => {
+    await renderPage("kanban")
+
+    expect(screen.getByText(`npx shadcn@latest add ${SITE_URL}/r/kanban.json`)).toBeInTheDocument()
+    expect(screen.getByText("npx shadcn@latest add @srikanth/kanban")).toBeInTheDocument()
+    expect(screen.getByText(/one-time setup/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(`{ "registries": { "@srikanth": { "url": "${SITE_URL}/r/{name}.json" } } }`)
+    ).toBeInTheDocument()
+  })
+
   it("renders a props table per documented export, and the keyboard rows", async () => {
     await renderPage("kanban")
 

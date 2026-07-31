@@ -118,6 +118,21 @@ describe("TimePicker", () => {
     expect(screen.getByLabelText("Hours")).not.toHaveAttribute("aria-describedby")
   })
 
+  it("keeps a consumer aria-describedby alongside the error id", () => {
+    render(
+      <TimePicker value={at(9, 30)} onChange={() => {}} hourCycle={12} error="Required">
+        <TimePickerInput unit="hours" aria-describedby="hint" />
+        <TimePickerPeriod aria-describedby="hint" />
+      </TimePicker>
+    )
+    const alert = screen.getByRole("alert")
+    for (const control of [screen.getByLabelText("Hours"), screen.getByRole("button", { name: /AM/ })]) {
+      expect(control.getAttribute("aria-describedby")?.split(" ")).toEqual(
+        expect.arrayContaining(["hint", alert.id])
+      )
+    }
+  })
+
   it("no error by default", () => {
     render(
       <TimePicker value={at(9, 30)} onChange={() => {}}>

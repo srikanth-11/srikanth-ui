@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 interface PasswordInputProps extends Omit<React.ComponentProps<typeof Input>, "type"> {
-  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  /** External error. Passing it at all (even `null`) takes precedence over `validate`'s
+   * result. A truthy value marks the field invalid. */
   error?: React.ReactNode
   /** No default policy (app-specific) — called on blur with the current value. */
   validate?: (value: string) => React.ReactNode | null
@@ -34,6 +35,10 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
     const showError = isInvalid && showErrorMessage !== false
+    // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       if (validate) emitError(validate(e.target.value) ?? null)
@@ -48,10 +53,10 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
             type={visible ? "text" : "password"}
             disabled={disabled}
             aria-invalid={isInvalid}
-            aria-describedby={showError ? errorId : undefined}
             className={cn("pe-10", className)}
             onBlur={handleBlur}
             {...props}
+            aria-describedby={describedBy}
           />
           <Button
             type="button"

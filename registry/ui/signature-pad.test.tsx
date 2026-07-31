@@ -216,6 +216,15 @@ describe("SignaturePad", () => {
     expect(screen.queryByRole("alert")).toBeNull()
   })
 
+  it("keeps a consumer aria-describedby alongside the error id", () => {
+    const { container } = render(<SignaturePad error="Signature is required" aria-describedby="hint" />)
+    const wrapper = container.querySelector('[data-slot="signature-pad"]')!
+    const alert = screen.getByRole("alert")
+    expect(wrapper.getAttribute("aria-describedby")?.split(" ")).toEqual(
+      expect.arrayContaining(["hint", alert.id])
+    )
+  })
+
   it("no error: wrapper is not aria-invalid and no alert renders", () => {
     const { container } = setup()
     expect(container.querySelector('[data-slot="signature-pad"]')).not.toHaveAttribute(

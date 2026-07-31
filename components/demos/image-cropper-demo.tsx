@@ -48,7 +48,10 @@ export function ImageCropperDemo() {
           and pressing Crop is otherwise silent to a screen reader. */}
       <div aria-live="polite">
         {preview ? (
-          <div className="flex items-center gap-3">
+          // Keyed on the URL so a repeat crop remounts instead of mutating img.src in
+          // place: a live region only announces added/removed nodes, so without this
+          // every crop after the first is silent.
+          <div key={preview} className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- runtime blob URL, nothing for next/image to optimise */}
             <img src={preview} alt="Cropped result" className="size-24 rounded-md border" />
             <a

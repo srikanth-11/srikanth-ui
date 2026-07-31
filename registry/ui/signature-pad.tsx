@@ -75,6 +75,10 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
     const errorId = React.useId()
     const isInvalid = !!error
     const showError = isInvalid && showErrorMessage !== false
+    // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     const toDataURL = React.useCallback(
       (type?: string) => canvasRef.current?.toDataURL(type) ?? "",
@@ -101,9 +105,10 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
       ctx.lineCap = "round"
       ctx.lineJoin = "round"
       // Canvas 2D can't resolve "currentColor" — read the inherited text color so
-      // the default pen follows the theme. Resolved per redraw, so a theme flip
-      // only reaches already-painted pixels on the next redraw; until then the
-      // existing drawing keeps the old color and only new strokes use the new one.
+      // the default pen follows the theme. Resolved once per redraw and applied to
+      // every replayed stroke, so a theme flip repaints the whole signature in the
+      // new color at the next redraw (resize, or the next stroke) — not just the
+      // strokes drawn after it.
       const pen = penColor || getComputedStyle(canvas).color || "#000"
       ctx.strokeStyle = pen
       ctx.fillStyle = pen
@@ -214,7 +219,6 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
           role="group"
           aria-invalid={isInvalid || undefined}
           aria-disabled={disabled || undefined}
-          aria-describedby={showError ? errorId : undefined}
           className={cn(
             "border-input bg-background relative h-40 w-full overflow-hidden rounded-md border shadow-xs",
             "aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-[3px]",
@@ -222,6 +226,7 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
             className
           )}
           {...props}
+          aria-describedby={describedBy}
         >
           <canvas
             ref={canvasRef}

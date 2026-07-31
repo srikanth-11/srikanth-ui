@@ -132,7 +132,8 @@ interface ColorPickerProps
   /** Fires with the new hex on every committed change (drag, swatch, valid hex entry). */
   onChange?: (hex: string) => void
   disabled?: boolean
-  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  /** External error. Passing it at all (even `null`) takes precedence over the built-in hex
+   * validation. A truthy value marks the picker invalid. */
   error?: React.ReactNode
   /** Replaces the default invalid-hex validator. Called on commit (blur/Enter) with the typed text. */
   validate?: (value: string) => React.ReactNode | null
@@ -452,6 +453,9 @@ const ColorPickerInput = React.forwardRef<
   Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue" | "onChange">
 >(({ className, onFocus, onBlur, onKeyDown, ...props }, ref) => {
   const { hex, setHsva, disabled, isInvalid, errorId, validate, emitError } = useColorPicker()
+  // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
+  const describedBy =
+    [props["aria-describedby"], errorId].filter(Boolean).join(" ") || undefined
   const [editing, setEditing] = React.useState(false)
   const [text, setText] = React.useState(hex)
 
@@ -489,7 +493,6 @@ const ColorPickerInput = React.forwardRef<
       aria-label="Hex color"
       disabled={disabled}
       aria-invalid={isInvalid}
-      aria-describedby={errorId}
       value={currentlyEditing ? text : hex}
       onFocus={(e) => {
         setText(hex)
@@ -524,6 +527,7 @@ const ColorPickerInput = React.forwardRef<
         className
       )}
       {...props}
+      aria-describedby={describedBy}
     />
   )
 })

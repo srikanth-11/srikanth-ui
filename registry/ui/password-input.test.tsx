@@ -41,6 +41,15 @@ describe("PasswordInput", () => {
     expect(quiet).not.toHaveAttribute("aria-describedby")
   })
 
+  it("keeps a consumer aria-describedby alongside the error id", () => {
+    render(<PasswordInput aria-label="Password" error="Too short" aria-describedby="hint" />)
+    const input = screen.getByLabelText("Password")
+    const alert = screen.getByRole("alert")
+    expect(input.getAttribute("aria-describedby")?.split(" ")).toEqual(
+      expect.arrayContaining(["hint", alert.id])
+    )
+  })
+
   it("no error by default", () => {
     render(<PasswordInput aria-label="Password" />)
     const input = screen.getByLabelText("Password")

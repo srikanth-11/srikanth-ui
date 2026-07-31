@@ -68,6 +68,15 @@ describe("NumberInput", () => {
     expect(input.getAttribute("aria-describedby")).toBe(alert.id)
   })
 
+  it("keeps a consumer aria-describedby alongside the error id", () => {
+    render(<NumberInput error="Too big" onChange={vi.fn()} aria-label="Qty" aria-describedby="hint" />)
+    const input = screen.getByLabelText("Qty")
+    const alert = screen.getByRole("alert")
+    expect(input.getAttribute("aria-describedby")?.split(" ")).toEqual(
+      expect.arrayContaining(["hint", alert.id])
+    )
+  })
+
   it("correcting via a stepper after a blur error clears the stale error and display", async () => {
     const onChange = vi.fn()
     render(<NumberInput min={0} max={100} onChange={onChange} aria-label="Qty" />)

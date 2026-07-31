@@ -395,7 +395,9 @@ const MonthGrid = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivE
     const innerRef = React.useRef<HTMLDivElement | null>(null)
     React.useImperativeHandle(ref, () => innerRef.current as HTMLDivElement)
 
-    // Roving tabIndex: one tab stop for the grid, arrows move the focused day.
+    // Roving tabIndex over the day cells: they share a single tab stop and arrows move
+    // the focused day. Chips and "+N more" are ordinary buttons, so each is its own tab
+    // stop — Tab walks into a day's events, arrows stay on the day grid.
     // `focusedKey` stays null until the user actually interacts, so nothing steals focus on mount.
     const [focusedKey, setFocusedKey] = React.useState<string | null>(null)
     React.useEffect(() => {
@@ -598,7 +600,8 @@ const WeekGrid = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
               style={{ height: HOURS.length * HOUR_HEIGHT }}
               onClick={(e) => {
                 // offsetY is relative to this column (the hour rules are pointer-events-none),
-                // so a click resolves to the nearest half hour of that day.
+                // so a click resolves to the half-hour slot it landed in — floored, not
+                // rounded, so the slot always starts at or before the pointer.
                 const y = (e.nativeEvent as MouseEvent).offsetY || 0
                 const minutes = Math.floor((y / HOUR_HEIGHT) * 2) * 30
                 onSlotClick?.(addMinutes(startOfDay(day), minutes))

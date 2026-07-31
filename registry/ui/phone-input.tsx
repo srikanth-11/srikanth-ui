@@ -54,7 +54,8 @@ interface PhoneInputProps
    * empty — so it can be fed straight back into `value` without an echo loop. */
   onChange?: (e164: string) => void
   onCountryChange?: (country: CountryCode) => void
-  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  /** External error. Passing it at all (even `null`) takes precedence over the built-in
+   * validation. A truthy value marks the field invalid. */
   error?: React.ReactNode
   /** Replaces the default validator. Called on blur with the current E.164 value. */
   validate?: (value: string) => React.ReactNode | null
@@ -119,6 +120,10 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
     const showError = isInvalid && showErrorMessage !== false
+    // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     if (process.env.NODE_ENV !== "production" && value !== undefined && !onChange) {
       console.warn("PhoneInput: `value` without `onChange` — component is read-only.")
@@ -291,12 +296,12 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           aria-label="Phone number"
           autoComplete="tel-national"
           aria-invalid={isInvalid}
-          aria-describedby={showError ? errorId : undefined}
           value={national}
           onChange={handleInput}
           onBlur={handleBlur}
           disabled={disabled}
           {...props}
+          aria-describedby={describedBy}
         />
       </div>
       {showError && (

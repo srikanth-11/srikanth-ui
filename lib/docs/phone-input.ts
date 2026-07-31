@@ -34,7 +34,7 @@ export const phoneInputDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error; truthy marks the field invalid and takes precedence over the built-in validation.",
+          description: "External error. Passing it at all — even `null` — takes precedence over the built-in validation; a truthy value marks the field invalid.",
         },
         {
           name: "validate",

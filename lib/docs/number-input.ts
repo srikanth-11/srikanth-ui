@@ -59,7 +59,7 @@ export const numberInputDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error; truthy marks the field invalid and takes precedence over the built-in validation.",
+          description: "External error. Passing it at all — even `null` — takes precedence over the built-in validation; a truthy value marks the field invalid.",
         },
         {
           name: "validate",
@@ -131,6 +131,8 @@ export function Quantity() {
 
 export function Budget() {
   return (
+    // Formatting is display-only — editing shows the raw number. The blur parser
+    // reads "." as a decimal point, so a typed "2.500" commits as 2.5.
     <NumberInput
       defaultValue={2500}
       min={0}
@@ -163,5 +165,5 @@ export function EvenOnly() {
     },
   ],
   errorState:
-    "Typed text is validated on blur. By default a number outside [min, max] is rejected rather than silently corrected: the field shows \"Enter a number between {min} and {max}\" (both formatted with your `locale`/`format`), keeps the text on screen so it can be fixed, and commits nothing. Set `clampInput` to get the older behavior instead — the value is clamped into range and committed. Text that parses to no number at all (empty, `-`, letters) commits as `null`, which is not an error. Passing `validate` replaces the default validator entirely, clamp included, so a value it approves commits exactly as typed, in range or not. Every path that resolves to a value — stepper press, arrow key, an accepted blur — clears the error, so a stale message can never outlive the input that caused it. A truthy `error` prop marks the field invalid too and takes precedence over the internal result. Either way the input carries `aria-invalid` and the message renders in a `role=\"alert\"` paragraph wired up with `aria-describedby`; `onErrorChange` reports internal errors as they appear and clear.",
+    "Typed text is validated on blur. By default a number outside [min, max] is rejected rather than silently corrected: the field shows \"Enter a number between {min} and {max}\" (both formatted with your `locale`/`format`), keeps the text on screen so it can be fixed, and commits nothing. Set `clampInput` to get the older behavior instead — the value is clamped into range and committed. Text that parses to no number at all (empty, `-`, letters) commits as `null`, which is not an error. Passing `validate` replaces the default validator entirely, clamp included, so a value it approves commits exactly as typed, in range or not. Every path that resolves to a value — stepper press, arrow key, an accepted blur — clears the error, so a stale message can never outlive the input that caused it. Passing `error` at all — even `null` — takes precedence over the internal result, and a truthy value marks the field invalid. Either way the input carries `aria-invalid` and the message renders in a `role=\"alert\"` paragraph wired up with `aria-describedby`; `onErrorChange` reports internal errors as they appear and clear.",
 }

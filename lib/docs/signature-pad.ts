@@ -14,7 +14,7 @@ export const signaturePadDoc: ComponentDoc = {
           name: "penColor",
           type: "string",
           default: "the canvas's computed `color`",
-          description: "Any CSS color. Left off, the pen follows the theme foreground — resolved per redraw, so a theme flip only reaches strokes drawn after it.",
+          description: "Any CSS color. Left off, the pen follows the theme foreground — resolved once per redraw and applied to every stroke, so a theme flip recolors the whole drawing at the next redraw (a resize, a new stroke, an undo or a clear).",
         },
         {
           name: "backgroundColor",

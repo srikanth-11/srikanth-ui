@@ -8,7 +8,7 @@ export const passwordInputDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error; truthy marks the field invalid and takes precedence over `validate`'s result.",
+          description: "External error. Passing it at all — even `null` — takes precedence over `validate`'s result; a truthy value marks the field invalid.",
         },
         {
           name: "validate",
@@ -39,7 +39,7 @@ export const passwordInputDoc: ComponentDoc = {
         {
           name: "className",
           type: "string",
-          description: "Extra classes for the input; it keeps the end padding that makes room for the toggle.",
+          description: "Extra classes for the input; it keeps the end padding that makes room for the toggle. Every other `Input` prop — `name`, `value`, `onChange`, `placeholder`, `autoComplete`, … — is forwarded.",
         },
       ],
     },

@@ -68,7 +68,7 @@ export const imageCropperDoc: ComponentDoc = {
           name: "opts",
           type: "CroppedImageOptions",
           default: "{}",
-          description: "Output options. Resolves with a `Blob`; rejects only when the image cannot load or the canvas cannot encode it.",
+          description: "Output options. Resolves with a `Blob`; rejects when the image cannot load, when no 2D canvas context is available, or when the canvas cannot encode the result.",
         },
       ],
     },
@@ -187,5 +187,5 @@ export function AvatarCropper({ onUpload }: { onUpload: (file: Blob) => void }) 
     },
   ],
   errorState:
-    "Framing cannot go wrong — zoom is capped at 1–3×, the crop box stays inside the image and a garbage area is clamped rather than rejected — so the cropper never invalidates itself. `error` is the only source, and it is where an app puts its own rule (\"image must be at least 400×400\", a rejected upload, a failed encode). A truthy `error` sets `aria-invalid` on the wrapper, which rings the crop area in destructive colors, and renders the message in a `role=\"alert\"` paragraph below the sliders, linked by `aria-describedby`; `showErrorMessage={false}` keeps the ring and drops the message. `getCroppedImage` is throw-free on bad areas for the same reason — it clamps them — and rejects only when the image cannot load or the canvas cannot encode the result. The realistic failure is a cross-origin `src` served without CORS headers: the canvas is tainted and encoding fails, which is worth catching and surfacing through `error`.",
+    "Framing cannot go wrong — zoom is capped at 1–3×, the crop box stays inside the image and a garbage area is clamped rather than rejected — so the cropper never invalidates itself. `error` is the only source, and it is where an app puts its own rule (\"image must be at least 400×400\", a rejected upload, a failed encode). A truthy `error` sets `aria-invalid` on the wrapper, which rings the crop area in destructive colors, and renders the message in a `role=\"alert\"` paragraph below the sliders, linked by `aria-describedby`; `showErrorMessage={false}` keeps the ring and drops the message. `getCroppedImage` is throw-free on bad areas for the same reason — it clamps them — and rejects on exactly three things: the image failing to load (\"Could not load image: {src}\"), no 2D canvas context (\"Canvas 2D context is unavailable\"), and the canvas failing to encode the result (\"Could not encode the cropped image\"). The realistic failure is a cross-origin `src` served without CORS headers; because the image is requested with `crossOrigin=\"anonymous\"`, such a response fails the load outright rather than tainting the canvas, so it surfaces as the load rejection — worth catching and reporting through `error`.",
 }

@@ -53,7 +53,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error; truthy marks the picker invalid and takes precedence over the built-in hex validation.",
+          description: "External error. Passing it at all — even `null` — takes precedence over the built-in hex validation; a truthy value marks the picker invalid.",
         },
         {
           name: "validate",
@@ -151,7 +151,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "hsva",
           type: "{ h: number; s: number; v: number; a: number }",
-          description: "Converts back to a hex string, appending the alpha pair only when `a` is below 1. Out-of-range channels are clamped.",
+          description: "Converts back to a hex string, appending the alpha pair only when `a` is below 1. Hue wraps into 0–360; saturation, brightness and alpha are clamped.",
         },
       ],
     },
@@ -206,5 +206,5 @@ const dimmed = hsva ? hsvaToHex({ ...hsva, v: hsva.v / 2 }) : "#000000"`,
     },
   ],
   errorState:
-    "Dragging and swatches can only ever produce a valid color, so the hex field is the one part that can go invalid. On commit — blur or Enter — text that is not `#rrggbb`/`#rrggbbaa` shows \"Enter a valid hex color like #3B82F6\", keeps what was typed on screen so it can be fixed, and changes no color. Escape reverts to the canonical hex. A `validate` function runs on the same commit and its message wins whenever it returns one, including for text that parses fine; the built-in message only appears when the text does not parse and `validate` returned nothing. Any color change from elsewhere — a drag, a swatch, a new controlled `value` — clears the error and drops the field back to the canonical hex. A truthy `error` prop marks the picker invalid too and takes precedence over the internal result. The invalid styling lands on the hex field (`aria-invalid`, destructive border and ring) and the message renders in a `role=\"alert\"` paragraph inside the picker, linked by `aria-describedby`; `showErrorMessage={false}` keeps the styling and drops the message. An unparseable controlled `value` is ignored rather than reported — it is a programming error, not user input.",
+    "Dragging and swatches can only ever produce a valid color, so the hex field is the one part that can go invalid. On commit — blur or Enter — text that is not `#rrggbb`/`#rrggbbaa` shows \"Enter a valid hex color like #3B82F6\", keeps what was typed on screen so it can be fixed, and changes no color. Escape reverts to the canonical hex. A `validate` function runs on the same commit and its message wins whenever it returns one, including for text that parses fine; the built-in message only appears when the text does not parse and `validate` returned nothing. A color change from a drag or a swatch clears the error and drops the field back to the canonical hex. A new controlled `value` is different: it resyncs the field to the incoming hex but leaves the error standing, so clear it by driving `error` yourself or let the next drag, swatch or valid entry clear it. Passing `error` at all — even `null` — takes precedence over the internal result, and a truthy value marks the picker invalid. The invalid styling lands on the hex field (`aria-invalid`, destructive border and ring) and the message renders in a `role=\"alert\"` paragraph inside the picker, linked by `aria-describedby`; `showErrorMessage={false}` keeps the styling and drops the message. An unparseable controlled `value` is ignored rather than reported — it is a programming error, not user input.",
 }

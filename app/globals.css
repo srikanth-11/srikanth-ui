@@ -129,6 +129,23 @@
   }
 }
 
+/* Shiki emits both themes as CSS variables per token (`defaultColor: false`) and
+   leaves the choice to CSS, so a theme toggle costs no re-highlight. Light is the
+   default; the `.dark` class swaps to the dark set. Unlayered on purpose — the
+   inline `style` attributes shiki writes only declare the variables, so nothing
+   here is competing with a utility. */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+}
+
 /* Layered so page utilities still outrank these. */
 @layer components {
   /* The landing wall links to /components#<name>. The browser scrolls, but a card

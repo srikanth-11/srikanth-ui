@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { SearchButton } from "@/components/site/search-button"
+import { CommandSearch } from "@/components/site/command-search"
 import { ThemeToggle } from "@/components/site/theme-toggle"
 import { GITHUB_URL } from "@/lib/site"
 
@@ -21,7 +21,7 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <SearchButton />
+          <CommandSearch />
           <Button asChild variant="ghost" size="icon" aria-label="GitHub">
             <a href={GITHUB_URL} target="_blank" rel="noreferrer">
               <GitHubIcon />

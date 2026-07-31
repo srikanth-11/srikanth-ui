@@ -1,11 +1,14 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { Providers } from "./providers"
 import { SiteFooter } from "./site-footer"
 import { SiteHeader } from "./site-header"
 
 const GITHUB = "https://github.com/srikanth-11/srikanth-ui"
+
+// The header's search is the command palette now, and it reaches for the router.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
 
 /** next-themes reads matchMedia and writes the class on <html>, so chrome renders below the provider. */
 function renderChrome(ui: React.ReactNode) {

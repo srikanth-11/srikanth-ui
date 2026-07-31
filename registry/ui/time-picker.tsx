@@ -116,8 +116,7 @@ interface TimePickerInputProps
 const TimePickerInput = React.forwardRef<HTMLInputElement, TimePickerInputProps>(
   ({ unit, className, onKeyDown, ...props }, ref) => {
     const { date, setDate, hourCycle, isInvalid, errorId } = useTimePicker()
-    // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
-    // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+    // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
     const describedBy =
       [props["aria-describedby"], errorId].filter(Boolean).join(" ") || undefined
     const buffer = React.useRef<string>("")
@@ -182,8 +181,7 @@ const TimePickerPeriod = React.forwardRef<
 >(({ className, ...props }, ref) => {
   const { date, setDate, hourCycle, isInvalid, errorId } = useTimePicker()
   if (hourCycle !== 12) return null
-  // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
-  // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+  // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
   const describedBy = [props["aria-describedby"], errorId].filter(Boolean).join(" ") || undefined
   const pm = date.getHours() >= 12
   const toggle = () => {

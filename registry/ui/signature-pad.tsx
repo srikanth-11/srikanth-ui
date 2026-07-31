@@ -75,8 +75,7 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
     const errorId = React.useId()
     const isInvalid = !!error
     const showError = isInvalid && showErrorMessage !== false
-    // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
-    // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+    // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
     const describedBy =
       [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
       undefined

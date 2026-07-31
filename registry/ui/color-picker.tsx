@@ -453,8 +453,7 @@ const ColorPickerInput = React.forwardRef<
   Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue" | "onChange">
 >(({ className, onFocus, onBlur, onKeyDown, ...props }, ref) => {
   const { hex, setHsva, disabled, isInvalid, errorId, validate, emitError } = useColorPicker()
-  // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
-  // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+  // Merge the consumer's aria-describedby with the error id (ARIA takes an id list).
   const describedBy =
     [props["aria-describedby"], errorId].filter(Boolean).join(" ") || undefined
   const [editing, setEditing] = React.useState(false)

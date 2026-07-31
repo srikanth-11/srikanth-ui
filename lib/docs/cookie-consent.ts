@@ -8,12 +8,12 @@ export const cookieConsentDoc: ComponentDoc = {
         {
           name: "categories",
           type: "CookieCategory[]",
-          description: "The cookie groups you are asking about, in the order the preferences dialog lists them. Required, and the shape of every consent payload — reported consent always has exactly these ids.",
+          description: "The cookie groups you are asking about, in the order the preferences dialog lists them. Required, and the shape of every consent payload. Reported consent always has exactly these ids.",
         },
         {
           name: "onConsent",
           type: "(consent: Record<string, boolean>) => void",
-          description: "Fires on every save, and once on mount when a valid stored choice already exists — so this is the single place to switch scripts on. Required categories always arrive `true`.",
+          description: "Fires on every save, and once on mount when a valid stored choice already exists, so this is the single place to switch scripts on. Required categories always arrive `true`.",
         },
         {
           name: "storageKey",
@@ -25,7 +25,7 @@ export const cookieConsentDoc: ComponentDoc = {
           name: "version",
           type: "number",
           default: "1",
-          description: "Stamped into the stored payload. Bump it when the categories change: a stored choice under a different version is ignored and the banner comes back.",
+          description: "Stamped into the stored payload. Bump it when the categories change. A stored choice under a different version is ignored and the banner comes back.",
         },
         {
           name: "policyHref",
@@ -35,7 +35,7 @@ export const cookieConsentDoc: ComponentDoc = {
         {
           name: "className",
           type: "string",
-          description: "Extra classes for the fixed bottom banner region. The preferences dialog is portalled and unaffected; remaining props go to the banner as well.",
+          description: "Extra classes for the fixed bottom banner region. The preferences dialog is portalled and unaffected. Remaining props go to the banner as well.",
         },
       ],
     },
@@ -82,7 +82,7 @@ export const cookieConsentDoc: ComponentDoc = {
         {
           name: "→ returns",
           type: "Record<string, boolean> | null",
-          description: "The raw stored choice, or `null` when there is none, it was saved under another version, it fails the shape check, or storage is unavailable. Safe on the server and never throws. The map is what was stored, not what the banner would report — it is not re-normalized against your categories.",
+          description: "The raw stored choice, or `null` when there is none, it was saved under another version, it fails the shape check, or storage is unavailable. Safe on the server and never throws. The map is what was stored, not what the banner would report. It is not re-normalized against your categories.",
         },
       ],
     },
@@ -125,7 +125,7 @@ export function Consent() {
 
 export function canTrack() {
   // null on the server, before any choice, after a version bump, or when
-  // storage is blocked — all of which mean "no consent yet".
+  // storage is blocked. All of those mean "no consent yet".
   return getStoredConsent()?.analytics === true
 }`,
     },
@@ -149,5 +149,5 @@ export function Consent({ onConsent }: { onConsent: (c: Record<string, boolean>)
     },
   ],
   errorState:
-    "There is no `error` prop and no invalid input — a consent choice is three buttons and a set of switches. What can go wrong is storage, and every touch of it is guarded. Reading is wrapped in a `try`/`catch` because `globalThis.localStorage` is undefined on the server and the getter itself throws in browsers with storage blocked; a missing entry, unparseable JSON, a version that does not match, or a `consent` value that is not a plain object of booleans — arrays and `null` are rejected explicitly, since a hand-edited or foreign payload is untrusted — all read as no consent, so the banner simply shows again. Writing is guarded the same way: with storage blocked the choice still applies for this session (the banner closes and `onConsent` fires) but it cannot be remembered, so the banner returns on the next load. Storage is read from an effect and never during render, which is why the banner starts hidden and appears a frame later once the client confirms there is no valid consent — a render-time read would hydration-mismatch. What reaches `onConsent` is always normalized against `categories`: required ids forced to `true`, missing or stale ids resolved to `false`, and ids you no longer declare dropped, so a payload left over from an older category list can never leak a permission you stopped asking about.",
+    "There is no `error` prop and no invalid input. A consent choice is three buttons and a set of switches. What can go wrong is storage, and every touch of it is guarded. Reading is wrapped in a `try`/`catch`, because `globalThis.localStorage` is undefined on the server and the getter itself throws in browsers with storage blocked. A missing entry, unparseable JSON, a version that does not match, and a `consent` value that is not a plain object of booleans all read as no consent, so the banner simply shows again. Arrays and `null` are rejected explicitly, since a hand-edited or foreign payload is untrusted. Writing is guarded the same way. With storage blocked the choice still applies for this session (the banner closes and `onConsent` fires) but it cannot be remembered, so the banner returns on the next load. Storage is read from an effect and never during render, which is why the banner starts hidden and appears a frame later once the client confirms there is no valid consent. A render-time read would hydration-mismatch. What reaches `onConsent` is always normalized against `categories`: required ids forced to `true`, missing or stale ids resolved to `false`, and ids you no longer declare dropped, so a payload left over from an older category list can never leak a permission you stopped asking about.",
 }

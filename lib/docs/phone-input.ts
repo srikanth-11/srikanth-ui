@@ -8,7 +8,7 @@ export const phoneInputDoc: ComponentDoc = {
         {
           name: "value",
           type: "string",
-          description: "Controlled value in E.164 (`+14155550123`); the country is re-derived from it as it changes. Pair it with `onChange` or the field is read-only (dev-warned).",
+          description: "Controlled value in E.164 (`+14155550123`). The country is re-derived from it as it changes. Pair it with `onChange` or the field is read-only (dev-warned).",
         },
         {
           name: "defaultValue",
@@ -24,7 +24,7 @@ export const phoneInputDoc: ComponentDoc = {
         {
           name: "onChange",
           type: "(e164: string) => void",
-          description: "Fires with the E.164 value on every edit — partial numbers included, and `\"\"` when empty — so it can be fed straight back into `value`.",
+          description: "Fires with the E.164 value on every edit, partial numbers included, and `\"\"` when empty, so it can be fed straight back into `value`.",
         },
         {
           name: "onCountryChange",
@@ -34,12 +34,12 @@ export const phoneInputDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error. Passing it at all — even `null` — takes precedence over the built-in validation; a truthy value marks the field invalid.",
+          description: "External error. Passing it at all (even `null`) takes precedence over the built-in validation. A truthy value marks the field invalid.",
         },
         {
           name: "validate",
           type: "(value: string) => React.ReactNode | null",
-          description: "Replaces the default validator entirely. Called on blur with the current E.164 value; return a message or null.",
+          description: "Replaces the default validator entirely. Called on blur with the current E.164 value. Return a message or null.",
         },
         {
           name: "onErrorChange",
@@ -75,7 +75,7 @@ export const phoneInputDoc: ComponentDoc = {
         {
           name: "text",
           type: "string",
-          description: "The number to check — an E.164 string validates on its own.",
+          description: "The number to check. An E.164 string validates on its own.",
         },
         {
           name: "defaultCountry",
@@ -140,5 +140,5 @@ export function UsOnlyPhone() {
     },
   ],
   errorState:
-    "With no `validate` prop the field runs two built-in checks. Too-long is checked on every keystroke — it is the one violation typing more can never fix — and reports \"Phone number is too long for <Country>\" once the digits pass the country's length or grow past the length at which the number last parsed as valid. Everything else is checked on blur: a non-empty number that fails `isValidPhoneNumber` reports \"Enter a valid <Country> phone number\". Passing `validate` replaces both; it runs on blur with the current E.164 string. Picking a different country clears any error, drops the length bookkeeping and re-checks against the new one. A truthy `error` prop takes precedence over whatever the internal validation found, and passing `error` at all (even `null`) hands the message over to you. Any error sets `aria-invalid` on the number input and renders a `role=\"alert\"` message below the row; `onErrorChange` fires only for the internal error, as it appears and clears.",
+    "With no `validate` prop the field runs two built-in checks. Too-long is checked on every keystroke, because it is the one violation typing more can never fix, and it reports \"Phone number is too long for <Country>\" once the digits pass the country's length or grow past the length at which the number last parsed as valid. Everything else is checked on blur: a non-empty number that fails `isValidPhoneNumber` reports \"Enter a valid <Country> phone number\". Passing `validate` replaces both, and it runs on blur with the current E.164 string. Picking a different country clears any error, drops the length bookkeeping and re-checks against the new one. A truthy `error` prop takes precedence over whatever the internal validation found, and passing `error` at all (even `null`) hands the message over to you. Any error sets `aria-invalid` on the number input and renders a `role=\"alert\"` message below the row. `onErrorChange` fires only for the internal error, as it appears and clears.",
 }

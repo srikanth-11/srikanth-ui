@@ -14,7 +14,7 @@ const STEPS = [
   },
   {
     title: "The code lands in your repo",
-    body: "A real file under components/ui — no package, no version to chase.",
+    body: "A real file under components/ui. No package, no version to chase.",
   },
   {
     title: "Edit it like your own",

@@ -14,7 +14,7 @@ export const signaturePadDoc: ComponentDoc = {
           name: "penColor",
           type: "string",
           default: "the canvas's computed `color`",
-          description: "Any CSS color. Left off, the pen follows the theme foreground — resolved once per redraw and applied to every stroke, so a theme flip recolors the whole drawing at the next redraw (a resize, a new stroke, an undo or a clear).",
+          description: "Any CSS color. Left off, the pen follows the theme foreground. It is resolved once per redraw and applied to every stroke, so a theme flip recolors the whole drawing at the next redraw (a resize, a new stroke, an undo or a clear).",
         },
         {
           name: "backgroundColor",
@@ -25,7 +25,7 @@ export const signaturePadDoc: ComponentDoc = {
         {
           name: "disabled",
           type: "boolean",
-          description: "Blocks drawing and dims the pad; a stroke in flight when this flips is abandoned rather than committed.",
+          description: "Blocks drawing and dims the pad. A stroke in flight when this flips is abandoned rather than committed.",
         },
         {
           name: "name",
@@ -35,7 +35,7 @@ export const signaturePadDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error; truthy marks the pad invalid. A signature cannot be invalid on its own.",
+          description: "There is nothing a signature can get wrong, so a truthy `error` from your app is the only thing that marks the pad invalid.",
         },
         {
           name: "showErrorMessage",
@@ -52,7 +52,7 @@ export const signaturePadDoc: ComponentDoc = {
         {
           name: "className",
           type: "string",
-          description: "Extra classes for the bordered pad; override `h-40` here to change its height.",
+          description: "Extra classes for the bordered pad. Override `h-40` here to change its height.",
         },
       ],
     },
@@ -77,7 +77,7 @@ export const signaturePadDoc: ComponentDoc = {
         {
           name: "toDataURL",
           type: "(type?: string) => string",
-          description: "Current canvas as a data URL; pass a mime type such as `\"image/jpeg\"` to change the format.",
+          description: "Current canvas as a data URL. Pass a mime type such as `\"image/jpeg\"` to change the format.",
         },
       ],
     },
@@ -131,5 +131,5 @@ export function SignatureField() {
     },
   ],
   errorState:
-    "There is nothing a signature can get wrong, so the pad never invalidates itself — `error` is the only source, and it is how an app reports its own rule (\"signature required\", say, checked with `isEmpty()` on submit). A truthy `error` puts `aria-invalid` on the pad wrapper, which is what draws the destructive border and ring, and renders the message in a `role=\"alert\"` paragraph below, linked by `aria-describedby`. With `showErrorMessage={false}` the ring stays, the message is not rendered and the description link is left off. The error is purely presentational: drawing still works, and the hidden `name` input keeps carrying whatever is on the canvas.",
+    "There is nothing a signature can get wrong, so the pad never invalidates itself. `error` is the only source, and it is how an app reports its own rule (\"signature required\", say, checked with `isEmpty()` on submit). A truthy `error` puts `aria-invalid` on the pad wrapper, which is what draws the destructive border and ring, and renders the message in a `role=\"alert\"` paragraph below, linked by `aria-describedby`. With `showErrorMessage={false}` the ring stays, the message is not rendered and the description link is left off. The error is purely presentational. Drawing still works, and the hidden `name` input keeps carrying whatever is on the canvas.",
 }

@@ -48,7 +48,7 @@ export const registryIndex: RegistryIndexEntry[] = [
     category: "form",
     howToUse: [
       "Open the flag button and type to search for a country",
-      "Type the local number — it spaces itself out as you go",
+      "Type the local number and it spaces itself out as you go",
       "Watch the line underneath for the number in international form",
     ],
   },
@@ -59,7 +59,7 @@ export const registryIndex: RegistryIndexEntry[] = [
     category: "form",
     howToUse: [
       "Start typing a password and watch the strength bar fill",
-      "Follow the checklist below it — each rule ticks off as you meet it",
+      "Follow the checklist below it, where each rule ticks off as you meet it",
       "Press the eye button to read back what you have typed",
     ],
   },
@@ -71,7 +71,7 @@ export const registryIndex: RegistryIndexEntry[] = [
     howToUse: [
       "Press the plus and minus buttons to nudge the amount up or down",
       "Or click into the field and use the up and down arrow keys",
-      "Type a bare number and click away — it comes back formatted as money",
+      "Type a bare number, click away, and it comes back formatted as money",
     ],
   },
   {
@@ -126,7 +126,7 @@ export const registryIndex: RegistryIndexEntry[] = [
     howToUse: [
       "Switch between Month and Week with the two buttons on the right",
       "Step back and forward with the chevrons, or press Today to come home",
-      "Walk the day grid with the arrow keys — events sit as chips on their day",
+      "Walk the day grid with the arrow keys, and find events as chips on their day",
     ],
   },
   {
@@ -148,7 +148,7 @@ export const registryIndex: RegistryIndexEntry[] = [
     howToUse: [
       "Press Start tour to put the spotlight on the first control",
       "Move along with Next and Back, or bail out with Skip",
-      "The lit-up control still works — try typing in the search box mid-tour",
+      "The lit-up control still works, so try typing in the search box mid-tour",
     ],
   },
   {
@@ -157,7 +157,7 @@ export const registryIndex: RegistryIndexEntry[] = [
     description: "Bell trigger with a capped unread badge, opening a tabbed popover with relative timestamps and per-row dismiss.",
     category: "widget",
     howToUse: [
-      "Click the bell to open the list — the badge counts what you have not read",
+      "Click the bell to open the list, with the badge counting what you have not read",
       "Switch to the Unread tab to hide everything you have already seen",
       "Dismiss a single row with its x, or clear the badge with Mark all as read",
     ],

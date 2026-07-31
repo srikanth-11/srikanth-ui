@@ -25,12 +25,12 @@ export const timePickerDoc: ComponentDoc = {
           name: "hourCycle",
           type: "12 | 24",
           default: "24",
-          description: "Hour format; 12 also enables `TimePickerPeriod`.",
+          description: "Hour format. 12 also enables `TimePickerPeriod`.",
         },
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error; truthy marks every segment invalid. Segments cannot produce invalid times themselves.",
+          description: "External error. Segments cannot produce invalid times themselves, so pass a truthy value here to mark every one of them invalid.",
         },
         {
           name: "showErrorMessage",
@@ -46,7 +46,7 @@ export const timePickerDoc: ComponentDoc = {
         {
           name: "children",
           type: "React.ReactNode",
-          description: "The segment parts to render — you compose the hour/minute/second inputs and separators.",
+          description: "The segment parts to render. You compose the hour/minute/second inputs and separators.",
         },
       ],
     },
@@ -61,7 +61,7 @@ export const timePickerDoc: ComponentDoc = {
         {
           name: "onKeyDown",
           type: "React.KeyboardEventHandler<HTMLInputElement>",
-          description: "Runs before the built-in key handling; call `preventDefault()` in it to suppress the arrow/digit behavior.",
+          description: "Runs before the built-in key handling. Call `preventDefault()` in it to suppress the arrow/digit behavior.",
         },
         {
           name: "className",
@@ -76,7 +76,7 @@ export const timePickerDoc: ComponentDoc = {
         {
           name: "className",
           type: "string",
-          description: "Extra classes for the AM/PM toggle button; every other `Button` prop is forwarded, and the part renders nothing unless `hourCycle` is 12.",
+          description: "Extra classes for the AM/PM toggle button. Every other `Button` prop is forwarded, and the part renders nothing unless `hourCycle` is 12.",
         },
       ],
     },
@@ -118,5 +118,5 @@ export function AlarmTime() {
     },
   ],
   errorState:
-    "A segment can never hold an invalid time — typed digits above the unit's maximum restart the buffer and arrow keys wrap — so `error` is the only way the field goes invalid. A truthy `error` sets `aria-invalid` on every segment input and on the AM/PM button (destructive border and ring) and renders the message in a `role=\"alert\"` paragraph below the group; each segment points its `aria-describedby` at that message, so the error is announced no matter which segment has focus. With `showErrorMessage={false}` the invalid styling stays, the message is not rendered, and `aria-describedby` is left off — render and associate your own text in that case.",
+    "A segment can never hold an invalid time, so `error` is the only way the field goes invalid. Typed digits above the unit's maximum restart the buffer, and arrow keys wrap. A truthy `error` sets `aria-invalid` on every segment input and on the AM/PM button (destructive border and ring) and renders the message in a `role=\"alert\"` paragraph below the group. Each segment points its `aria-describedby` at that message, so the error is announced no matter which segment has focus. With `showErrorMessage={false}` the invalid styling stays, the message is not rendered, and `aria-describedby` is left off. Render and associate your own text in that case.",
 }

@@ -51,6 +51,16 @@ describe("site header", () => {
     expect(screen.getByRole("button", { name: /theme/i }).querySelectorAll("svg")).toHaveLength(2)
   })
 
+  it("contributes no heading of its own to the page", () => {
+    renderChrome(<SiteHeader />)
+
+    // The palette's DialogHeader sits inside DialogContent, so it only exists inside
+    // the portal. Hoisted out — which is where `shadcn add command` puts it — it
+    // renders whether the dialog is open or not, and every page grows a phantom
+    // "Search components" heading above its own h1.
+    expect(screen.queryAllByRole("heading")).toHaveLength(0)
+  })
+
   it("puts the document in dark mode when the toggle is clicked", async () => {
     const user = userEvent.setup()
     renderChrome(<SiteHeader />)

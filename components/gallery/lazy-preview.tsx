@@ -4,9 +4,10 @@ import { cn } from "@/lib/utils"
 
 /**
  * Mounts `children` only once the wrapper nears the viewport, then holds it
- * inert: a gallery card is a button, so the preview inside it must not be
- * clickable, focusable or announced. Before that it is a skeleton of exactly
- * the same height, so nothing shifts when the demo arrives.
+ * inert: a gallery card is covered by a link overlay, so the demo's own controls
+ * must not be clickable, focusable or announced — they would compete with the
+ * one target the card actually has. Before that it is a skeleton of exactly the
+ * same height, so nothing shifts when the demo arrives.
  */
 export function LazyPreview({
   children,

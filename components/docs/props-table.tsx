@@ -29,10 +29,18 @@ export function PropsTable({ doc }: { doc: DocExport }) {
         <table className="w-full min-w-xl border-collapse text-left text-sm">
           <thead className="bg-muted/50 text-muted-foreground">
             <tr>
-              <th className="px-3 py-2 font-medium">Prop</th>
-              <th className="px-3 py-2 font-medium">Type</th>
-              <th className="px-3 py-2 font-medium">Default</th>
-              <th className="px-3 py-2 font-medium">Description</th>
+              <th scope="col" className="px-3 py-2 font-medium">
+                Prop
+              </th>
+              <th scope="col" className="px-3 py-2 font-medium">
+                Type
+              </th>
+              <th scope="col" className="px-3 py-2 font-medium">
+                Default
+              </th>
+              <th scope="col" className="px-3 py-2 font-medium">
+                Description
+              </th>
             </tr>
           </thead>
           <tbody>

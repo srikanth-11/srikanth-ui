@@ -12,7 +12,7 @@ const STEPS: TourStep[] = [
     id: "search",
     target: "#tour-demo-search",
     title: "Find anything",
-    content: "Search across projects, issues and people. The spotlight is click-through — type in it.",
+    content: "Search across projects, issues and people. The spotlight is click-through, so type in it.",
   },
   {
     id: "filters",

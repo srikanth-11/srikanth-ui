@@ -18,7 +18,7 @@ const INITIAL: Notification[] = [
     id: "n2",
     title: "Nina commented on your pull request",
     description:
-      "The spotlight cutout looks right on Safari now, but the popover still jumps a pixel when the page scrolls — worth a look before we merge this.",
+      "The spotlight cutout looks right on Safari now, but the popover still jumps a pixel when the page scrolls. Worth a look before we merge this.",
     timestamp: ago(45),
     read: false,
     href: "#",

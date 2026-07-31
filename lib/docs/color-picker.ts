@@ -10,17 +10,17 @@ const trackProps = (surface: string, keys: string) => [
   {
     name: "onPointerDown",
     type: "React.PointerEventHandler<HTMLDivElement>",
-    description: "Runs before the drag starts; call `preventDefault()` in it to suppress picking.",
+    description: "Runs before the drag starts. Call `preventDefault()` in it to suppress picking.",
   },
   {
     name: "onPointerMove",
     type: "React.PointerEventHandler<HTMLDivElement>",
-    description: "Runs before the drag updates; call `preventDefault()` in it to suppress picking.",
+    description: "Runs before the drag updates. Call `preventDefault()` in it to suppress picking.",
   },
   {
     name: "onKeyDown",
     type: "React.KeyboardEventHandler<HTMLDivElement>",
-    description: `Runs before the built-in keys; call \`preventDefault()\` in it to suppress ${keys}.`,
+    description: `Runs before the built-in keys. Call \`preventDefault()\` in it to suppress ${keys}.`,
   },
 ]
 
@@ -32,7 +32,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "value",
           type: "string",
-          description: "Controlled hex (`#rrggbb` or `#rrggbbaa`). Pair it with `onChange` or the picker is read-only (dev-warned); an unparseable value is ignored, never thrown on.",
+          description: "Controlled hex (`#rrggbb` or `#rrggbbaa`). Pair it with `onChange` or the picker is read-only (dev-warned). An unparseable value is ignored, never thrown on.",
         },
         {
           name: "defaultValue",
@@ -43,7 +43,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "onChange",
           type: "(hex: string) => void",
-          description: "Fires with the new hex on every committed change — drag, swatch click or a valid hex entry. Includes the alpha pair only when alpha is below 1.",
+          description: "Fires with the new hex on every committed change: a drag, a swatch click or a valid hex entry. Includes the alpha pair only when alpha is below 1.",
         },
         {
           name: "disabled",
@@ -53,7 +53,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error. Passing it at all — even `null` — takes precedence over the built-in hex validation; a truthy value marks the picker invalid.",
+          description: "External error. Passing it at all (even `null`) takes precedence over the built-in hex validation. A truthy value marks the picker invalid.",
         },
         {
           name: "validate",
@@ -79,7 +79,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "children",
           type: "React.ReactNode",
-          description: "The parts to render — you choose which of area, hue, alpha, hex field and swatches appear and in what order.",
+          description: "The parts to render. You choose which of area, hue, alpha, hex field and swatches appear, and in what order.",
         },
       ],
     },
@@ -116,7 +116,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "onKeyDown",
           type: "React.KeyboardEventHandler<HTMLInputElement>",
-          description: "Runs before the built-in keys; call `preventDefault()` in it to suppress Enter (commit) and Escape (revert).",
+          description: "Runs before the built-in keys. Call `preventDefault()` in it to suppress Enter (commit) and Escape (revert).",
         },
       ],
     },
@@ -126,7 +126,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "swatches",
           type: "string[]",
-          description: "Hex colors to offer as one-click presets. Required; a swatch that does not parse is rendered but selects nothing.",
+          description: "Hex colors to offer as one-click presets. Required. A swatch that does not parse is rendered but selects nothing.",
         },
         {
           name: "className",
@@ -141,7 +141,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "hex",
           type: "string",
-          description: "`#rrggbb` or `#rrggbbaa` (whitespace trimmed). Returns `{ h, s, v, a }` — h 0–360, s and v 0–100, a 0–1 — or `null` when the string does not parse.",
+          description: "`#rrggbb` or `#rrggbbaa` (whitespace trimmed). Returns `{ h, s, v, a }` with h 0–360, s and v 0–100 and a 0–1, or `null` when the string does not parse.",
         },
       ],
     },
@@ -151,7 +151,7 @@ export const colorPickerDoc: ComponentDoc = {
         {
           name: "hsva",
           type: "{ h: number; s: number; v: number; a: number }",
-          description: "Converts back to a hex string, appending the alpha pair only when `a` is below 1. Hue wraps into 0–360; saturation, brightness and alpha are clamped.",
+          description: "Converts back to a hex string, appending the alpha pair only when `a` is below 1. Hue wraps into 0–360. Saturation, brightness and alpha are clamped.",
         },
       ],
     },
@@ -206,5 +206,5 @@ const dimmed = hsva ? hsvaToHex({ ...hsva, v: hsva.v / 2 }) : "#000000"`,
     },
   ],
   errorState:
-    "Dragging and swatches can only ever produce a valid color, so the hex field is the one part that can go invalid. On commit — blur or Enter — text that is not `#rrggbb`/`#rrggbbaa` shows \"Enter a valid hex color like #3B82F6\", keeps what was typed on screen so it can be fixed, and changes no color. Escape reverts to the canonical hex. A `validate` function runs on the same commit and its message wins whenever it returns one, including for text that parses fine; the built-in message only appears when the text does not parse and `validate` returned nothing. A color change from a drag or a swatch clears the error and drops the field back to the canonical hex. A new controlled `value` is different: it resyncs the field to the incoming hex but leaves the error standing, so clear it by driving `error` yourself or let the next drag, swatch or valid entry clear it. Passing `error` at all — even `null` — takes precedence over the internal result, and a truthy value marks the picker invalid. The invalid styling lands on the hex field (`aria-invalid`, destructive border and ring) and the message renders in a `role=\"alert\"` paragraph inside the picker, linked by `aria-describedby`; `showErrorMessage={false}` keeps the styling and drops the message. An unparseable controlled `value` is ignored rather than reported — it is a programming error, not user input.",
+    "Dragging and swatches can only ever produce a valid color, so the hex field is the one part that can go invalid. On commit (blur or Enter) text that is not `#rrggbb`/`#rrggbbaa` shows \"Enter a valid hex color like #3B82F6\", keeps what was typed on screen so it can be fixed, and changes no color. Escape reverts to the canonical hex. A `validate` function runs on the same commit and its message wins whenever it returns one, including for text that parses fine. The built-in message only appears when the text does not parse and `validate` returned nothing. A color change from a drag or a swatch clears the error and drops the field back to the canonical hex. A new controlled `value` behaves differently. It resyncs the field to the incoming hex but leaves the error standing, so clear it by driving `error` yourself, or let the next drag, swatch or valid entry clear it. Passing `error` at all (even `null`) takes precedence over the internal result, and a truthy value marks the picker invalid. The invalid styling lands on the hex field (`aria-invalid`, destructive border and ring) and the message renders in a `role=\"alert\"` paragraph inside the picker, linked by `aria-describedby`. With `showErrorMessage={false}` the styling stays and the message is dropped. An unparseable controlled `value` is ignored rather than reported. It is a programming error, not user input.",
 }

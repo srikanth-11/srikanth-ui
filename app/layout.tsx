@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "srikanth/ui — the components shadcn/ui doesn't ship",
   description:
-    "Time picker, phone input, password input, number input and more — install with the shadcn CLI, own the code.",
+    "Time picker, phone input, password input, number input and more. Install with the shadcn CLI, own the code.",
   metadataBase: new URL("https://srikanth-ui.vercel.app"),
 };
 

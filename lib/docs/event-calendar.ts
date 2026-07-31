@@ -9,7 +9,7 @@ export const eventCalendarDoc: ComponentDoc = {
           name: "events",
           type: "CalendarEvent[]",
           default: "[]",
-          description: "The events to render. Filtered before anything is laid out — an entry without valid `start`/`end` dates, or with `end` before `start`, is dropped with a dev warning rather than thrown on.",
+          description: "The events to render. Filtered before anything is laid out. An entry without valid `start`/`end` dates, or with `end` before `start`, is dropped with a dev warning rather than thrown on.",
         },
         {
           name: "view",
@@ -30,7 +30,7 @@ export const eventCalendarDoc: ComponentDoc = {
         {
           name: "date",
           type: "Date",
-          description: "Controlled anchor date — the month the grid draws, or the week it falls in. Pair it with `onDateChange` or paging is read-only (dev-warned).",
+          description: "Controlled anchor date. It sets the month the grid draws, or the week it falls in. Pair it with `onDateChange` or paging is read-only (dev-warned).",
         },
         {
           name: "defaultDate",
@@ -46,18 +46,18 @@ export const eventCalendarDoc: ComponentDoc = {
         {
           name: "onEventClick",
           type: "(event: CalendarEvent) => void",
-          description: "Fires with the clicked event. A chip click stops there — it is not also reported as a slot click.",
+          description: "Fires with the clicked event. A chip click stops there. It is not also reported as a slot click.",
         },
         {
           name: "onSlotClick",
           type: "(date: Date) => void",
-          description: "Fires with the empty space that was clicked: the start of the day in month view, the start of the half hour you clicked in — floored, not rounded — in week view.",
+          description: "Fires with the empty space that was clicked: the start of the day in month view, and in week view the start of the half hour you clicked in, floored rather than rounded.",
         },
         {
           name: "weekStartsOn",
           type: "0 | 1 | 2 | 3 | 4 | 5 | 6",
           default: "0",
-          description: "First day of the week — 0 is Sunday, 1 Monday. Drives both the month grid's columns and the week the week view shows.",
+          description: "First day of the week: 0 is Sunday, 1 Monday. Drives both the month grid's columns and the week the week view shows.",
         },
         {
           name: "className",
@@ -67,7 +67,7 @@ export const eventCalendarDoc: ComponentDoc = {
         {
           name: "children",
           type: "React.ReactNode",
-          description: "The parts to render — toolbar, grid, or your own chrome around them, in whatever order you want.",
+          description: "The parts to render: toolbar, grid, or your own chrome around them, in whatever order you want.",
         },
       ],
     },
@@ -87,7 +87,7 @@ export const eventCalendarDoc: ComponentDoc = {
         {
           name: "className",
           type: "string",
-          description: "Extra classes for the grid. Renders the month grid or the week grid from the current view; arrow-key roving moves between day cells and exists in month view only, so in week view the event chips are the only focus stops.",
+          description: "Extra classes for the grid. Renders the month grid or the week grid from the current view. Arrow-key roving moves between day cells and exists in month view only, so in week view the event chips are the only focus stops.",
         },
       ],
     },
@@ -144,7 +144,7 @@ export const eventCalendarDoc: ComponentDoc = {
         {
           name: "→ returns",
           type: "Date[]",
-          description: "Always 42 days — six rows of seven — beginning on the week start on or before the first of the month, so leading and trailing days belong to the neighbouring months.",
+          description: "Always 42 days, six rows of seven, beginning on the week start on or before the first of the month, so leading and trailing days belong to the neighbouring months.",
         },
       ],
     },
@@ -154,7 +154,7 @@ export const eventCalendarDoc: ComponentDoc = {
         {
           name: "events",
           type: "CalendarEvent[]",
-          description: "The events to place. Invalid entries, all-day events and events that miss the day are filtered out; a non-array lays out nothing.",
+          description: "The events to place. Invalid entries, all-day events and events that miss the day are filtered out. A non-array lays out nothing.",
         },
         {
           name: "day",
@@ -253,7 +253,7 @@ export function Planner({ events }: { events: CalendarEvent[] }) {
 // 42 days, Monday-first, for the month containing the date.
 const days = getMonthGridDays(new Date(2026, 6, 15), 1)
 
-// Geometry for one day's timed events — px offsets at 48px/hour, plus the
+// Geometry for one day's timed events: px offsets at 48px/hour, plus the
 // column split for anything that overlaps.
 const placed = layoutWeekEvents(events, days[0])
 const tallest = placed.reduce((max, p) => Math.max(max, p.height), 0)`,
@@ -262,7 +262,7 @@ const tallest = placed.reduce((max, p) => Math.max(max, p.height), 0)`,
   keyboard: [
     {
       keys: "Tab",
-      action: "Moves into the month grid, where the day cells share a single roving tab stop — event chips and \"+N more\" inside them are their own stops; focus lands on the day you last focused, or on the calendar's current date before any interaction.",
+      action: "Moves into the month grid, where the day cells share a single roving tab stop. Event chips and \"+N more\" inside them are their own stops. Focus lands on the day you last focused, or on the calendar's current date before any interaction.",
     },
     {
       keys: "Arrow Left / Arrow Right",
@@ -270,7 +270,7 @@ const tallest = placed.reduce((max, p) => Math.max(max, p.height), 0)`,
     },
     {
       keys: "Arrow Up / Arrow Down",
-      action: "Moves a week back or forward — same weekday, previous or next row — paging the calendar the same way at the edges.",
+      action: "Moves a week back or forward, to the same weekday in the previous or next row, paging the calendar the same way at the edges.",
     },
     {
       keys: "Enter / Space",
@@ -282,5 +282,5 @@ const tallest = placed.reduce((max, p) => Math.max(max, p.height), 0)`,
     },
   ],
   errorState:
-    "There is no `error` prop and nothing here can be typed wrong — the only bad input is bad data, and it is dropped rather than thrown on. An event is kept when `start` and `end` are both real dates and `end` is not before `start`; anything else is filtered out and dev-warned by id (\"ignoring N invalid event(s) (missing dates or end before start)\"). An `events` prop that is not an array renders an empty calendar with its own warning. When nothing is dropped the original array is passed through untouched, so memoized consumers keep their identity. `layoutWeekEvents` applies the same filter and returns `[]` for a non-array, so calling it directly with unverified data is safe too. What survives the filter can still surprise you rather than error: an event whose `end` is far past its `start` shows up in every day it covers, and a chip that overlaps several others is narrowed by the greedy column split rather than hidden. Month cells show three chips and collapse the rest into \"+N more\", which pages to the week view — no event is silently lost.",
+    "There is no `error` prop and nothing here can be typed wrong. The only bad input is bad data, and it is dropped rather than thrown on. An event is kept when `start` and `end` are both real dates and `end` is not before `start`. Anything else is filtered out and dev-warned by id (\"ignoring N invalid event(s) (missing dates or end before start)\"). An `events` prop that is not an array renders an empty calendar with its own warning. When nothing is dropped the original array is passed through untouched, so memoized consumers keep their identity. `layoutWeekEvents` applies the same filter and returns `[]` for a non-array, so calling it directly with unverified data is safe too. What survives the filter can still surprise you rather than error: an event whose `end` is far past its `start` shows up in every day it covers, and a chip that overlaps several others is narrowed by the greedy column split rather than hidden. Month cells show three chips and collapse the rest into \"+N more\", which pages to the week view. No event is silently lost.",
 }

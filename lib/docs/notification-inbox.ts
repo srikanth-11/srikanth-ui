@@ -8,7 +8,7 @@ export const notificationInboxDoc: ComponentDoc = {
         {
           name: "notifications",
           type: "Notification[]",
-          description: "The rows to show, newest first — the inbox renders the order you give it. Required, and data-in only: read and dismissed state lives in your app, the inbox just reports intent.",
+          description: "The rows to show, newest first. The inbox renders the order you give it. Required, and data-in only. Read and dismissed state lives in your app, and the inbox just reports intent.",
         },
         {
           name: "onMarkRead",
@@ -23,17 +23,17 @@ export const notificationInboxDoc: ComponentDoc = {
         {
           name: "onDismiss",
           type: "(id: string) => void",
-          description: "Fires from a row's X button, which is always rendered — without this handler it is a no-op.",
+          description: "Fires from a row's X button, which is always rendered. Without this handler it is a no-op.",
         },
         {
           name: "onItemClick",
           type: "(item: Notification) => void",
-          description: "Fires on row activation with the whole notification. A row with an `href` still navigates; this runs alongside it.",
+          description: "Fires on row activation with the whole notification. A row with an `href` still navigates, and this runs alongside it.",
         },
         {
           name: "renderItem",
           type: "(item: Notification) => React.ReactNode",
-          description: "Replaces the whole row — body and dismiss button both — inside the list item that keeps `role=\"listitem\"`. The read dot, relative stamp, `href` handling and dismiss control become yours to render and wire.",
+          description: "Replaces the whole row, body and dismiss button both, inside the list item that keeps `role=\"listitem\"`. The read dot, relative stamp, `href` handling and dismiss control become yours to render and wire.",
         },
         {
           name: "className",
@@ -48,12 +48,12 @@ export const notificationInboxDoc: ComponentDoc = {
         {
           name: "id",
           type: "string",
-          description: "React key, and what `onMarkRead`/`onDismiss` hand back. Required and unique — a row without one, or with a duplicate, is dropped.",
+          description: "React key, and what `onMarkRead`/`onDismiss` hand back. Required and unique. A row without one, or with a duplicate, is dropped.",
         },
         {
           name: "title",
           type: "string",
-          description: "Row headline. Required — a row without a string title is dropped — and it names the row's dismiss button (\"Dismiss {title}\").",
+          description: "Row headline. Required, since a row without a string title is dropped. It also names the row's dismiss button (\"Dismiss {title}\").",
         },
         {
           name: "description",
@@ -73,7 +73,7 @@ export const notificationInboxDoc: ComponentDoc = {
         {
           name: "href",
           type: "string",
-          description: "Makes the row a real link, so middle-click and \"open in new tab\" work. Only relative URLs and the `http:`, `https:`, `mailto:` and `tel:` schemes survive; anything else is dropped and the row degrades to a button.",
+          description: "Makes the row a real link, so middle-click and \"open in new tab\" work. Only relative URLs and the `http:`, `https:`, `mailto:` and `tel:` schemes survive. Anything else is dropped and the row degrades to a button.",
         },
       ],
     },
@@ -89,12 +89,12 @@ export const notificationInboxDoc: ComponentDoc = {
           name: "now",
           type: "Date",
           default: "new Date()",
-          description: "The clock to measure against — pass one to keep a list of stamps consistent, or to test the bucket boundaries.",
+          description: "The clock to measure against. Pass one to keep a list of stamps consistent, or to test the bucket boundaries.",
         },
         {
           name: "→ returns",
           type: "string",
-          description: "Localized age: \"now\" under a minute (future stamps included, so a clock a few seconds ahead does not count forward), then whole minutes, hours and days, and a plain calendar date from a week out — with the year only when it is not the current one.",
+          description: "Localized age: \"now\" under a minute (future stamps included, so a clock a few seconds ahead does not count forward), then whole minutes, hours and days, and a plain calendar date from a week out, carrying the year only when it is not the current one.",
         },
       ],
     },
@@ -147,7 +147,7 @@ import { NotificationInbox, formatRelativeTime, type Notification } from "@/comp
 
 export function CompactInbox({ notifications }: { notifications: Notification[] }) {
   // renderItem replaces the row and its dismiss button, so anything you still
-  // want — the stamp, a dismiss control — you render yourself.
+  // want, like the stamp or a dismiss control, you render yourself.
   return (
     <NotificationInbox
       notifications={notifications}
@@ -177,5 +177,5 @@ formatRelativeTime(undefined as unknown as Date, now) // ""`,
     },
   ],
   errorState:
-    "There is no `error` prop and nothing in the panel can be typed wrong — the risks here are bad rows and hostile links, and both are handled before render. A row is kept only when it is an object with a string `id`, a string `title` and an id nothing else on the list used; the rest are dropped together with a dev warning (\"ignoring N notification(s) with a missing title or a missing/duplicate id\"), a `notifications` prop that is not an array renders an empty inbox, and when nothing is dropped the array you passed is used as-is. `href` is the real trust boundary, because notifications are server- or user-authored: control characters and whitespace are stripped first — browsers ignore them when resolving a scheme, so \" JaVaScRiPt:\" and \"java\\tscript:\" both navigate — and only relative URLs plus `http:`, `https:`, `mailto:` and `tel:` get through. Anything else is dropped with a dev warning naming the notification, and the row falls back to a button that still fires `onItemClick`, so the notification stays usable without the link. A `timestamp` that is not a valid date yields an empty stamp and the `<time>` element is skipped entirely, so no row can render \"Invalid Date\" or throw. The badge caps its label at \"99+\" while the trigger's own label keeps the exact count, and the empty states read \"No notifications yet\" and \"All caught up\" rather than showing an empty box.",
+    "There is no `error` prop and nothing in the panel can be typed wrong. The risks here are bad rows and hostile links, and both are handled before render. A row is kept only when it is an object with a string `id`, a string `title` and an id nothing else on the list used. The rest are dropped together with a dev warning (\"ignoring N notification(s) with a missing title or a missing/duplicate id\"), a `notifications` prop that is not an array renders an empty inbox, and when nothing is dropped the array you passed is used as-is. `href` is the real trust boundary, because notifications are server- or user-authored. Control characters and whitespace are stripped first, since browsers ignore them when resolving a scheme and both \" JaVaScRiPt:\" and \"java\\tscript:\" navigate. Only relative URLs plus `http:`, `https:`, `mailto:` and `tel:` get through. Anything else is dropped with a dev warning naming the notification, and the row falls back to a button that still fires `onItemClick`, so the notification stays usable without the link. A `timestamp` that is not a valid date yields an empty stamp and the `<time>` element is skipped entirely, so no row can render \"Invalid Date\" or throw. The badge caps its label at \"99+\" while the trigger's own label keeps the exact count, and the empty states read \"No notifications yet\" and \"All caught up\" rather than showing an empty box.",
 }

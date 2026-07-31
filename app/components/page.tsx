@@ -8,7 +8,7 @@ export default function ComponentsPage() {
     <main className="mx-auto max-w-6xl px-6 py-16">
       <h1 className="text-3xl font-semibold tracking-tight">Components</h1>
       <p className="text-muted-foreground mt-2">
-        {registryMeta.length} components. Each card previews one live; click it for the full
+        {registryMeta.length} components. Each card previews one live. Click it for the full
         documentation.
       </p>
       <div className="mt-8">

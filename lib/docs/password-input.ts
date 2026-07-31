@@ -8,12 +8,12 @@ export const passwordInputDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error. Passing it at all — even `null` — takes precedence over `validate`'s result; a truthy value marks the field invalid.",
+          description: "External error. Passing it at all (even `null`) takes precedence over `validate`'s result. A truthy value marks the field invalid.",
         },
         {
           name: "validate",
           type: "(value: string) => React.ReactNode | null",
-          description: "Called on blur with the current value; return a message or null. There is no default policy — password rules are app-specific.",
+          description: "Called on blur with the current value. Return a message or null. There is no default policy, since password rules are app-specific.",
         },
         {
           name: "onErrorChange",
@@ -39,7 +39,7 @@ export const passwordInputDoc: ComponentDoc = {
         {
           name: "className",
           type: "string",
-          description: "Extra classes for the input; it keeps the end padding that makes room for the toggle. Every other `Input` prop — `name`, `value`, `onChange`, `placeholder`, `autoComplete`, … — is forwarded.",
+          description: "Extra classes for the input, which keeps the end padding that makes room for the toggle. Every other `Input` prop is forwarded: `name`, `value`, `onChange`, `placeholder`, `autoComplete` and the rest.",
         },
       ],
     },
@@ -49,13 +49,13 @@ export const passwordInputDoc: ComponentDoc = {
         {
           name: "value",
           type: "string",
-          description: "The password to measure. Required — this part is presentational and holds no state.",
+          description: "The password to measure. Required, since this part is presentational and holds no state.",
         },
         {
           name: "rules",
           type: "PasswordRule[]",
           default: "defaultPasswordRules",
-          description: "Checklist rendered under the meter; each rule is `{ label, test }`. The built-in set covers length, mixed case, a number and a symbol.",
+          description: "Checklist rendered under the meter, where each rule is `{ label, test }`. The built-in set covers length, mixed case, a number and a symbol.",
         },
         {
           name: "getScore",
@@ -127,5 +127,5 @@ export function Strength({ password }: { password: string }) {
     },
   ],
   errorState:
-    "The field ships no password policy of its own: nothing is invalid until `validate` says so. It runs on blur with the current value, and whatever it returns becomes the message. A truthy `error` prop marks the field invalid too, and passing `error` at all (even `null`) takes precedence over the internal result — that is how a server-side or form-library error replaces the local one. Either way the input gets `aria-invalid`, the message renders in a `role=\"alert\"` paragraph below and `aria-describedby` links the two; `showErrorMessage={false}` keeps the styling and drops the rendered message. `onErrorChange` fires only for the internal error, as it appears and clears. `PasswordStrength` is purely informative — an unmet rule is never an error state.",
+    "The field ships no password policy of its own. Nothing is invalid until `validate` says so. It runs on blur with the current value, and whatever it returns becomes the message. A truthy `error` prop marks the field invalid too, and passing `error` at all (even `null`) takes precedence over the internal result. That is how a server-side or form-library error replaces the local one. Either way the input gets `aria-invalid`, the message renders in a `role=\"alert\"` paragraph below and `aria-describedby` links the two. With `showErrorMessage={false}` the styling stays and the rendered message is dropped. `onErrorChange` fires only for the internal error, as it appears and clears. `PasswordStrength` is purely informative, and an unmet rule is never an error state.",
 }

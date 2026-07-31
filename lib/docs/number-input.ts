@@ -8,7 +8,7 @@ export const numberInputDoc: ComponentDoc = {
         {
           name: "value",
           type: "number | null",
-          description: "Controlled value; `null` means empty. Pair it with `onChange` or the field is read-only (dev-warned).",
+          description: "Controlled value, where `null` means empty. Pair it with `onChange` or the field is read-only (dev-warned).",
         },
         {
           name: "defaultValue",
@@ -19,7 +19,7 @@ export const numberInputDoc: ComponentDoc = {
         {
           name: "onChange",
           type: "(value: number | null) => void",
-          description: "Fires with every committed value — steppers, arrow keys and a resolved blur — or `null` when the field is cleared.",
+          description: "Fires with every committed value from the steppers, the arrow keys and a resolved blur, or `null` when the field is cleared.",
         },
         {
           name: "min",
@@ -59,12 +59,12 @@ export const numberInputDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error. Passing it at all — even `null` — takes precedence over the built-in validation; a truthy value marks the field invalid.",
+          description: "External error. Passing it at all (even `null`) takes precedence over the built-in validation. A truthy value marks the field invalid.",
         },
         {
           name: "validate",
           type: "(value: number | null) => React.ReactNode | null",
-          description: "Replaces the default out-of-range validator, clamp included. Called on blur with the typed value; an approved value commits exactly as typed.",
+          description: "Replaces the default out-of-range validator, clamp included. Called on blur with the typed value, and an approved value commits exactly as typed.",
         },
         {
           name: "onErrorChange",
@@ -81,7 +81,7 @@ export const numberInputDoc: ComponentDoc = {
           name: "clampInput",
           type: "boolean",
           default: "false",
-          description: "Legacy behavior: clamp typed out-of-range input into [min, max] on blur instead of showing an error.",
+          description: "Legacy behavior. Clamps typed out-of-range input into [min, max] on blur instead of showing an error.",
         },
         {
           name: "disabled",
@@ -101,7 +101,7 @@ export const numberInputDoc: ComponentDoc = {
         {
           name: "onKeyDown",
           type: "React.KeyboardEventHandler<HTMLInputElement>",
-          description: "Runs before the built-in arrow handling; call `preventDefault()` in it to suppress stepping.",
+          description: "Runs before the built-in arrow handling. Call `preventDefault()` in it to suppress stepping.",
         },
         {
           name: "className",
@@ -131,8 +131,8 @@ export function Quantity() {
 
 export function Budget() {
   return (
-    // Formatting is display-only — editing shows the raw number. The blur parser
-    // reads "." as a decimal point, so a typed "2.500" commits as 2.5.
+    // Formatting is display-only. Editing shows the raw number, and the blur
+    // parser reads "." as a decimal point, so a typed "2.500" commits as 2.5.
     <NumberInput
       defaultValue={2500}
       min={0}
@@ -165,5 +165,5 @@ export function EvenOnly() {
     },
   ],
   errorState:
-    "Typed text is validated on blur. By default a number outside [min, max] is rejected rather than silently corrected: the field shows \"Enter a number between {min} and {max}\" (both formatted with your `locale`/`format`), keeps the text on screen so it can be fixed, and commits nothing. Set `clampInput` to get the older behavior instead — the value is clamped into range and committed. Text that parses to no number at all (empty, `-`, letters) commits as `null`, which is not an error. Passing `validate` replaces the default validator entirely, clamp included, so a value it approves commits exactly as typed, in range or not. Every path that resolves to a value — stepper press, arrow key, an accepted blur — clears the error, so a stale message can never outlive the input that caused it. Passing `error` at all — even `null` — takes precedence over the internal result, and a truthy value marks the field invalid. Either way the input carries `aria-invalid` and the message renders in a `role=\"alert\"` paragraph wired up with `aria-describedby`; `onErrorChange` reports internal errors as they appear and clear.",
+    "Typed text is validated on blur. By default a number outside [min, max] is rejected rather than silently corrected: the field shows \"Enter a number between {min} and {max}\" (both formatted with your `locale`/`format`), keeps the text on screen so it can be fixed, and commits nothing. Set `clampInput` to get the older behavior instead, where the value is clamped into range and committed. Text that parses to no number at all (empty, `-`, letters) commits as `null`, which is not an error. Passing `validate` replaces the default validator entirely, clamp included, so a value it approves commits exactly as typed, in range or not. Every path that resolves to a value clears the error, whether that is a stepper press, an arrow key or an accepted blur, so a stale message can never outlive the input that caused it. Passing `error` at all (even `null`) takes precedence over the internal result, and a truthy value marks the field invalid. Either way the input carries `aria-invalid` and the message renders in a `role=\"alert\"` paragraph wired up with `aria-describedby`. `onErrorChange` reports internal errors as they appear and clear.",
 }

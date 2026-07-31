@@ -36,7 +36,7 @@ export const imageCropperDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error. Truthy marks the cropper invalid. A crop cannot be invalid on its own.",
+          description: "External error, and the only way the cropper goes invalid. A crop cannot be invalid on its own, so any truthy value here marks it.",
         },
         {
           name: "showErrorMessage",

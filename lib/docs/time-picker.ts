@@ -30,7 +30,7 @@ export const timePickerDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error. Truthy marks every segment invalid. Segments cannot produce invalid times themselves.",
+          description: "External error. Segments cannot produce invalid times themselves, so pass a truthy value here to mark every one of them invalid.",
         },
         {
           name: "showErrorMessage",

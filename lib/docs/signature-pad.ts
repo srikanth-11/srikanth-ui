@@ -35,7 +35,7 @@ export const signaturePadDoc: ComponentDoc = {
         {
           name: "error",
           type: "React.ReactNode",
-          description: "External error. Truthy marks the pad invalid. A signature cannot be invalid on its own.",
+          description: "There is nothing a signature can get wrong, so a truthy `error` from your app is the only thing that marks the pad invalid.",
         },
         {
           name: "showErrorMessage",

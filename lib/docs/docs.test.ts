@@ -2,22 +2,9 @@ import { describe, expect, it } from "vitest"
 import { registryMeta } from "@/lib/registry-meta"
 import { componentDocs } from "./index"
 
-// The names whose docs content exists today. Grows to every registryMeta name as
-// the remaining components are written up; the rules below already apply to every
-// entry in componentDocs, so new entries are covered the moment they land.
-const DOCUMENTED = [
-  "time-picker",
-  "phone-input",
-  "password-input",
-  "number-input",
-  "color-picker",
-  "signature-pad",
-  "image-cropper",
-]
-
 describe("componentDocs", () => {
-  it("has an entry for every documented component", () => {
-    for (const name of DOCUMENTED) expect(componentDocs[name], name).toBeDefined()
+  it("has an entry for every registry component", () => {
+    for (const entry of registryMeta) expect(componentDocs[entry.name], entry.name).toBeDefined()
   })
 
   it("gives every entry exports, prop rows and a usable example", () => {

@@ -206,7 +206,8 @@ interface NotificationInboxProps
   onMarkAllRead?: () => void
   onDismiss?: (id: string) => void
   onItemClick?: (item: Notification) => void
-  /** Replaces the row body; the list wrapper and its semantics stay. */
+  /** Replaces the whole row, the dismiss button included — re-render one if you still
+   * want it. Only the `role="listitem"` wrapper stays. */
   renderItem?: (item: Notification) => React.ReactNode
 }
 

@@ -70,8 +70,10 @@ function loadImage(src: string) {
     const image = new Image()
     image.addEventListener("load", () => resolve(image))
     image.addEventListener("error", () => reject(new Error(`Could not load image: ${src}`)))
-    // Same-origin images ignore it; cross-origin ones need it or the canvas
-    // turns tainted and toBlob throws a SecurityError.
+    // Same-origin images ignore it. For cross-origin ones it swaps a silent failure
+    // for a loud one: without it the canvas turns tainted and toBlob throws a
+    // SecurityError at crop time; with it, a server that sends no CORS headers
+    // simply fails to load and rejects here instead.
     image.crossOrigin = "anonymous"
     image.src = src
   })
@@ -104,7 +106,8 @@ function rotateToCanvas(image: HTMLImageElement, degrees: number) {
 
 /**
  * Crops `src` to `area` (source-image pixels, as handed to onCropComplete).
- * Rejects only when the image can't load — a bad area is clamped, not thrown on.
+ * A bad area is clamped, never thrown on. Rejects in exactly three cases: the image
+ * fails to load, the canvas has no 2D context, or the crop can't be encoded.
  */
 async function getCroppedImage(src: string, area: Area, opts: CroppedImageOptions = {}) {
   const { type = "image/png", quality, rotation = 0 } = opts

@@ -54,7 +54,8 @@ interface PhoneInputProps
    * empty — so it can be fed straight back into `value` without an echo loop. */
   onChange?: (e164: string) => void
   onCountryChange?: (country: CountryCode) => void
-  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  /** External error. Passing it at all (even `null`) takes precedence over the built-in
+   * validation. A truthy value marks the field invalid. */
   error?: React.ReactNode
   /** Replaces the default validator. Called on blur with the current E.164 value. */
   validate?: (value: string) => React.ReactNode | null

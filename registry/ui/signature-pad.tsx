@@ -101,9 +101,10 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
       ctx.lineCap = "round"
       ctx.lineJoin = "round"
       // Canvas 2D can't resolve "currentColor" — read the inherited text color so
-      // the default pen follows the theme. Resolved per redraw, so a theme flip
-      // only reaches already-painted pixels on the next redraw; until then the
-      // existing drawing keeps the old color and only new strokes use the new one.
+      // the default pen follows the theme. Resolved once per redraw and applied to
+      // every replayed stroke, so a theme flip repaints the whole signature in the
+      // new color at the next redraw (resize, or the next stroke) — not just the
+      // strokes drawn after it.
       const pen = penColor || getComputedStyle(canvas).color || "#000"
       ctx.strokeStyle = pen
       ctx.fillStyle = pen

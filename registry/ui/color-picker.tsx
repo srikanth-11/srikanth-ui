@@ -132,7 +132,8 @@ interface ColorPickerProps
   /** Fires with the new hex on every committed change (drag, swatch, valid hex entry). */
   onChange?: (hex: string) => void
   disabled?: boolean
-  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  /** External error. Passing it at all (even `null`) takes precedence over the built-in hex
+   * validation. A truthy value marks the picker invalid. */
   error?: React.ReactNode
   /** Replaces the default invalid-hex validator. Called on commit (blur/Enter) with the typed text. */
   validate?: (value: string) => React.ReactNode | null

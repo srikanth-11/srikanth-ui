@@ -20,7 +20,8 @@ interface NumberInputProps
   format?: Intl.NumberFormatOptions
   locale?: string
   allowWheel?: boolean
-  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  /** External error. Passing it at all (even `null`) takes precedence over the built-in
+   * validation. A truthy value marks the field invalid. */
   error?: React.ReactNode
   /** Replaces the default out-of-range validator. Called on blur with the typed value. */
   validate?: (value: number | null) => React.ReactNode | null

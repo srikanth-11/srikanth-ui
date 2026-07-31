@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 interface PasswordInputProps extends Omit<React.ComponentProps<typeof Input>, "type"> {
-  /** External/controlled error; truthy = invalid. Display takes precedence over internal validation. */
+  /** External error. Passing it at all (even `null`) takes precedence over `validate`'s
+   * result. A truthy value marks the field invalid. */
   error?: React.ReactNode
   /** No default policy (app-specific) — called on blur with the current value. */
   validate?: (value: string) => React.ReactNode | null

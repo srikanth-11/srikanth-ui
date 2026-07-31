@@ -22,15 +22,8 @@ export function ImageCropperDemo() {
 
   return (
     <div className="w-full max-w-sm space-y-3">
-      {/* Zoom leads, and not for style: the sample is square and the crop is
-          square, so at the smallest zoom the photo covers the frame exactly and
-          the cropper pins it. "Drag the photo" first told you to try the one
-          gesture that does nothing yet. */}
-      <ol className="text-muted-foreground list-decimal ps-4 text-xs leading-relaxed">
-        <li>Zoom in with the slider, then drag the photo to frame it</li>
-        <li>Straighten it with the rotate slider</li>
-        <li>Press Crop to get the result</li>
-      </ol>
+      {/* The steps used to live here; they are `howToUse` in the registry index
+          now, printed above this demo on the docs page and nowhere twice. */}
       <ImageCropper
         src={SRC}
         aspect={1}

@@ -22,7 +22,7 @@ export function InstallCommand({ name }: { name: string }) {
         cmd={`npx shadcn@latest add @srikanth/${name}`}
         label="Copy the short install command"
       />
-      <details className="text-muted-foreground group text-xs">
+      <details className="text-muted-foreground text-xs">
         <summary className="focus-visible:ring-ring/50 hover:text-foreground cursor-pointer rounded-sm py-1 outline-none focus-visible:ring-3">
           One-time setup for the short form
         </summary>

@@ -10,7 +10,7 @@ import { registryIndex } from "@/lib/registry-index"
  * meta module drags every demo component along with it.
  */
 export function InstallPicker() {
-  const [name, setName] = React.useState("time-picker")
+  const [name, setName] = React.useState(registryIndex[0].name)
   return (
     <div className="flex flex-col gap-2">
       <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs">

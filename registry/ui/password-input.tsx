@@ -35,6 +35,11 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
     const showError = isInvalid && showErrorMessage !== false
+    // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
+    // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       if (validate) emitError(validate(e.target.value) ?? null)
@@ -49,10 +54,10 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
             type={visible ? "text" : "password"}
             disabled={disabled}
             aria-invalid={isInvalid}
-            aria-describedby={showError ? errorId : undefined}
             className={cn("pe-10", className)}
             onBlur={handleBlur}
             {...props}
+            aria-describedby={describedBy}
           />
           <Button
             type="button"

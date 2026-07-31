@@ -85,6 +85,11 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
     const showError = isInvalid && showErrorMessage !== false
+    // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
+    // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     if (process.env.NODE_ENV !== "production" && isControlled && !onChange) {
       console.warn("NumberInput: `value` without `onChange` — component is read-only.")
@@ -211,7 +216,6 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           aria-valuemin={min === Number.MIN_SAFE_INTEGER ? undefined : min}
           aria-valuemax={max === Number.MAX_SAFE_INTEGER ? undefined : max}
           aria-invalid={isInvalid}
-          aria-describedby={showError ? errorId : undefined}
           value={display}
           disabled={disabled}
           onFocus={(e) => {
@@ -233,6 +237,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           }}
           className="text-center tabular-nums"
           {...props}
+          aria-describedby={describedBy}
         />
         <Button
           type="button"

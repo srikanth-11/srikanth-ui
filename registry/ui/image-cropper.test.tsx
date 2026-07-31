@@ -236,6 +236,17 @@ describe("ImageCropper", () => {
     expect(screen.queryByRole("alert")).toBeNull()
   })
 
+  it("keeps a consumer aria-describedby alongside the error id", () => {
+    const { container } = render(
+      <ImageCropper src="/photo.png" error="Crop the photo" aria-describedby="hint" />
+    )
+    const root = container.querySelector('[data-slot="image-cropper"]')!
+    const alert = screen.getByRole("alert")
+    expect(root.getAttribute("aria-describedby")?.split(" ")).toEqual(
+      expect.arrayContaining(["hint", alert.id])
+    )
+  })
+
   it("no error: root is not aria-invalid and no alert renders", () => {
     const { container } = render(<ImageCropper src="/photo.png" />)
     expect(container.querySelector('[data-slot="image-cropper"]')).not.toHaveAttribute(

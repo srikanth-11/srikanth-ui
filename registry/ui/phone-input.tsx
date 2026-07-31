@@ -120,6 +120,11 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const displayError = error !== undefined ? error : internalError
     const isInvalid = !!displayError
     const showError = isInvalid && showErrorMessage !== false
+    // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
+    // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     if (process.env.NODE_ENV !== "production" && value !== undefined && !onChange) {
       console.warn("PhoneInput: `value` without `onChange` — component is read-only.")
@@ -292,12 +297,12 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           aria-label="Phone number"
           autoComplete="tel-national"
           aria-invalid={isInvalid}
-          aria-describedby={showError ? errorId : undefined}
           value={national}
           onChange={handleInput}
           onBlur={handleBlur}
           disabled={disabled}
           {...props}
+          aria-describedby={describedBy}
         />
       </div>
       {showError && (

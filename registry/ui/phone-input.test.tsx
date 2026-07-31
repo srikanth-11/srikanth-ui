@@ -158,6 +158,15 @@ describe("PhoneInput", () => {
     expect(quiet).not.toHaveAttribute("aria-describedby")
   })
 
+  it("keeps a consumer aria-describedby alongside the error id", () => {
+    render(<PhoneInput defaultCountry="US" error="custom" aria-describedby="hint" />)
+    const input = screen.getByRole("textbox", { name: /phone number/i })
+    const alert = screen.getByRole("alert")
+    expect(input.getAttribute("aria-describedby")?.split(" ")).toEqual(
+      expect.arrayContaining(["hint", alert.id])
+    )
+  })
+
   it("no error by default: no alert and nothing described", () => {
     render(<PhoneInput defaultCountry="US" />)
     const input = screen.getByRole("textbox", { name: /phone number/i })

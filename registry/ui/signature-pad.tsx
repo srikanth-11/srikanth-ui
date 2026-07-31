@@ -75,6 +75,11 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
     const errorId = React.useId()
     const isInvalid = !!error
     const showError = isInvalid && showErrorMessage !== false
+    // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
+    // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     const toDataURL = React.useCallback(
       (type?: string) => canvasRef.current?.toDataURL(type) ?? "",
@@ -215,7 +220,6 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
           role="group"
           aria-invalid={isInvalid || undefined}
           aria-disabled={disabled || undefined}
-          aria-describedby={showError ? errorId : undefined}
           className={cn(
             "border-input bg-background relative h-40 w-full overflow-hidden rounded-md border shadow-xs",
             "aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-[3px]",
@@ -223,6 +227,7 @@ const SignaturePad = React.forwardRef<SignaturePadHandle, SignaturePadProps>(
             className
           )}
           {...props}
+          aria-describedby={describedBy}
         >
           <canvas
             ref={canvasRef}

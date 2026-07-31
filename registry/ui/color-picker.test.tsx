@@ -119,6 +119,19 @@ describe("ColorPicker", () => {
     expect(input).not.toHaveAttribute("aria-describedby")
   })
 
+  it("ColorPickerInput: keeps a consumer aria-describedby alongside the error id", () => {
+    render(
+      <ColorPicker value="#ff0000" onChange={vi.fn()} error="Pick a brand color">
+        <ColorPickerInput aria-describedby="hint" />
+      </ColorPicker>
+    )
+    const input = screen.getByRole("textbox", { name: "Hex color" })
+    const alert = screen.getByRole("alert")
+    expect(input.getAttribute("aria-describedby")?.split(" ")).toEqual(
+      expect.arrayContaining(["hint", alert.id])
+    )
+  })
+
   it("ColorPickerInput: showErrorMessage=false keeps aria-invalid without a description", async () => {
     const user = userEvent.setup()
     render(

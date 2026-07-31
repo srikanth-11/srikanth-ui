@@ -169,6 +169,11 @@ const ImageCropper = React.forwardRef<HTMLDivElement, ImageCropperProps>(
     const rotateLabelId = React.useId()
     const isInvalid = !!error
     const showError = isInvalid && showErrorMessage !== false
+    // aria-describedby takes an id LIST — merge the consumer's ids with ours instead of
+    // letting one replace the other. Applied after {...props} below, or it gets overwritten.
+    const describedBy =
+      [props["aria-describedby"], showError ? errorId : undefined].filter(Boolean).join(" ") ||
+      undefined
 
     // react-easy-crop already fires this on interaction end (not per frame), so
     // the passthrough needs no debounce of its own. Rotation rides along because
@@ -189,9 +194,9 @@ const ImageCropper = React.forwardRef<HTMLDivElement, ImageCropperProps>(
         data-slot="image-cropper"
         role="group"
         aria-invalid={isInvalid || undefined}
-        aria-describedby={showError ? errorId : undefined}
         className={cn("group grid gap-4", className)}
         {...props}
+        aria-describedby={describedBy}
       >
         <div
           data-slot="image-cropper-area"

@@ -185,6 +185,8 @@ describe("Kanban rendering", () => {
     render(<Kanban columns={board()} onChange={vi.fn()} />)
     expect(screen.getByRole("status")).toHaveAttribute("aria-live", "assertive")
     expect(screen.getByText(/press space or enter to pick up a card/i)).toBeInTheDocument()
+    // dnd-kit's defaultKeyboardCodes.end includes Tab, so the drop keys must list it.
+    expect(screen.getByText(/press space, enter, or tab to drop the card/i)).toBeInTheDocument()
   })
 
   it("drops invalid columns and items with a dev warning instead of throwing", () => {

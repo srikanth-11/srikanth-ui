@@ -166,7 +166,7 @@ const kanbanKeyboardCoordinates: KeyboardCoordinateGetter = (event, { active, co
 
 const screenReaderInstructions: ScreenReaderInstructions = {
   draggable:
-    "Press space or enter to pick up a card. While dragging, use the arrow keys to move the card within its column or to another column. Press space or enter again to drop the card, or press escape to cancel.",
+    "Press space or enter to pick up a card. While dragging, use the arrow keys to move the card within its column or to another column. Press space, enter, or tab to drop the card, or press escape to cancel.",
 }
 
 interface KanbanContextValue {

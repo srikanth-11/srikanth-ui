@@ -18,7 +18,15 @@ export function PreviewTabs({
         <TabsTrigger value="preview">Preview</TabsTrigger>
         <TabsTrigger value="code">Code</TabsTrigger>
       </TabsList>
-      <TabsContent value="preview">{preview}</TabsContent>
+      {/* forceMount, because the demos are the point: a reader who crops a photo
+          or rearranges the board and then glances at the code should come back to
+          what they left. Radix stops applying `hidden` once it is mounted for
+          good, so the class has to hide it instead. The code pane keeps the
+          default unmount — it is static markup with no state to lose, and
+          mounting it up front doubles the page's HTML. */}
+      <TabsContent value="preview" forceMount className="data-[state=inactive]:hidden">
+        {preview}
+      </TabsContent>
       <TabsContent value="code">{code}</TabsContent>
     </Tabs>
   )

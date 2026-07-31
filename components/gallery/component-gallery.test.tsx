@@ -71,8 +71,10 @@ describe("ComponentGallery", () => {
     window.location.hash = "#kanban"
     render(<ComponentGallery />)
     expect(document.getElementById("kanban")).toHaveAttribute("data-highlight")
-    // …and lands clear of the sticky stack (header 56px + filter bar 108, 136 wrapped = 192).
-    expect(document.getElementById("kanban")).toHaveClass("scroll-mt-48")
+    // …and lands clear of the sticky stack: the filter bar pins at 56px and is
+    // 144px tall when the pill row wraps on a phone, so the stack ends at 200px,
+    // and the 2px/3px-offset highlight ring puts the floor at 205 — 208px (13rem).
+    expect(document.getElementById("kanban")).toHaveClass("scroll-mt-52")
 
     act(() => {
       window.location.hash = "#color-picker"

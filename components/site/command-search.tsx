@@ -31,6 +31,7 @@ export interface SearchItem {
 
 export function CommandSearch({ items }: { items: SearchItem[] }) {
   const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
   const router = useRouter()
 
   /** Registry order within a category is the curated one; only the categories are sorted. */
@@ -62,6 +63,7 @@ export function CommandSearch({ items }: { items: SearchItem[] }) {
   return (
     <>
       <Button
+        ref={triggerRef}
         variant="outline"
         onClick={() => setOpen(true)}
         className="text-muted-foreground justify-start gap-2 font-normal sm:w-56"
@@ -78,6 +80,14 @@ export function CommandSearch({ items }: { items: SearchItem[] }) {
         onOpenChange={setOpen}
         title={LABEL}
         description="Jump to a component's documentation."
+        onCloseAutoFocus={(event) => {
+          // Radix's own handler focuses the `DialogTrigger`, and a palette that
+          // also opens on ⌘K cannot have one — so it focuses nothing and Escape
+          // drops the keyboard user back on the body. preventDefault takes that
+          // handler off, and the button we do have gets the focus instead.
+          event.preventDefault()
+          triggerRef.current?.focus()
+        }}
       >
         <Command label={LABEL}>
           <CommandInput placeholder="Search components…" />

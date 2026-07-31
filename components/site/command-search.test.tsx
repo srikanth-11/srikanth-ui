@@ -91,7 +91,7 @@ describe("command palette", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
   })
 
-  it("closes on Escape", async () => {
+  it("closes on Escape and hands focus back to the trigger", async () => {
     const user = userEvent.setup()
     render(<CommandSearch items={ITEMS} />)
 
@@ -101,6 +101,9 @@ describe("command palette", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
     expect(push).not.toHaveBeenCalled()
+    // Radix returns focus to a `DialogTrigger`; ⌘K means the palette has none, so
+    // left alone it drops focus on the body and keyboard users restart from the top.
+    await waitFor(() => expect(trigger()).toHaveFocus())
   })
 
   it("removes its global keydown listener on unmount", () => {

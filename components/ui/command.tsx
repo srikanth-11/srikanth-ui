@@ -39,13 +39,14 @@ function CommandDialog({
   children,
   className,
   showCloseButton = false,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string
   description?: string
   className?: string
   showCloseButton?: boolean
-}) {
+} & Pick<React.ComponentProps<typeof DialogContent>, "onCloseAutoFocus">) {
   return (
     <Dialog {...props}>
       <DialogContent
@@ -54,6 +55,9 @@ function CommandDialog({
           className
         )}
         showCloseButton={showCloseButton}
+        // Forwarded by hand: the rest of the props belong to the root, and this
+        // is the only hook a palette opened by keyboard has for putting focus back.
+        onCloseAutoFocus={onCloseAutoFocus}
       >
         {/* Inside the content: outside it, the header renders in place (and out of
             the portal) whether the dialog is open or not, leaking a phantom

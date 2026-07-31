@@ -123,11 +123,14 @@ function Grid({
           key={name}
           id={name}
           data-highlight={highlight === name ? "" : undefined}
-          // scroll-mt clears the sticky stack: header 56px + filter bar 108
-          // (136 when the pill row wraps on a phone) bottoms out at 192px, and
-          // scroll-mt-48 is exactly that — anything shorter parks the ring
-          // under the bar.
-          className="bg-card hover:border-ring relative flex scroll-mt-48 flex-col rounded-xl border p-4 transition-colors motion-reduce:transition-none"
+          // scroll-mt clears the sticky stack. The filter bar pins at top-14
+          // (56px) and stands 144px tall once the pill row wraps on a phone
+          // (py-4 32 + input 36 + mt-3 12 + two pill rows 28+8+28), so the
+          // stack bottoms out at 200px — and the highlight ring (2px outline,
+          // 3px offset) sits 5px above the card, making 205px the floor.
+          // scroll-mt-52 (208px) is the first step that clears it; measured at
+          // 375px, anything shorter parks the ring under the bar.
+          className="bg-card hover:border-ring relative flex scroll-mt-52 flex-col rounded-xl border p-4 transition-colors motion-reduce:transition-none"
         >
           <LazyPreview previewHeightClass={WIDE.has(name) ? "h-64" : "h-40"}>
             {WIDE.has(name) ? (

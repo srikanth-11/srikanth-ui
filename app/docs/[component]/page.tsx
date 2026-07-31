@@ -23,8 +23,9 @@ export default async function ComponentPage({
   if (!meta) notFound()
   const { title, description, Demo, InvalidDemo, name } = meta
 
+  // No wrapper of its own: app/docs/layout.tsx owns the `main`, the width and the padding.
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
+    <>
       <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
       <p className="text-muted-foreground mt-2">{description}</p>
       <div className="bg-card mt-8 flex min-h-48 items-center justify-center rounded-xl border p-8">
@@ -49,6 +50,6 @@ export default async function ComponentPage({
       >
         Open {title} in v0
       </a>
-    </main>
+    </>
   )
 }

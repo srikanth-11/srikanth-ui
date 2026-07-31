@@ -2,7 +2,7 @@
 import * as React from "react"
 import { CheckIcon, CopyIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { SITE_URL } from "@/lib/registry-meta"
+import { SITE_URL } from "@/lib/registry-index"
 
 export function InstallCommand({ name }: { name: string }) {
   const cmd = `npx shadcn@latest add ${SITE_URL}/r/${name}.json`

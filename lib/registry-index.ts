@@ -9,6 +9,17 @@ export const SITE_URL = "https://srikanth-ui.vercel.app"
 
 export type ComponentCategory = "form" | "picker" | "widget" | "overlay"
 
+/**
+ * One spelling of each category, for the gallery pills, the command palette and
+ * the docs sidebar. Insertion order is the order all three present them in.
+ */
+export const CATEGORY_LABELS: Record<ComponentCategory, string> = {
+  form: "Form inputs",
+  picker: "Pickers & canvas",
+  widget: "Widgets",
+  overlay: "Overlays",
+}
+
 export interface RegistryIndexEntry {
   name: string
   title: string

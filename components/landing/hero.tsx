@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { InstallCommand } from "@/components/install-command"
-import { registryMeta } from "@/lib/registry-meta"
+import { registryIndex } from "@/lib/registry-index"
 import { GITHUB_URL } from "@/lib/site"
 
 /** Stagger step, ms. Five blocks land over ~0.4s — a sequence, not a queue. */
@@ -17,7 +17,7 @@ export function Hero() {
           className="reveal text-muted-foreground border-border bg-card/50 rounded-full border px-3 py-1 text-xs font-medium"
           style={{ animationDelay: "0ms" }}
         >
-          {registryMeta.length} components · MIT · you own the code
+          {registryIndex.length} components · MIT · you own the code
         </p>
         {/* One text node on purpose: split across spans, the accessible name picks
             up the seams. */}

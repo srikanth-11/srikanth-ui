@@ -2,6 +2,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { registryMeta, type ComponentCategory } from "@/lib/registry-meta"
+import { CATEGORY_LABELS } from "@/lib/registry-index"
 import { InstallCommand } from "@/components/install-command"
 import { LazyPreview } from "@/components/gallery/lazy-preview"
 import {
@@ -12,12 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-const CATEGORIES: { value: ComponentCategory; label: string }[] = [
-  { value: "form", label: "Form inputs" },
-  { value: "picker", label: "Pickers & canvas" },
-  { value: "widget", label: "Widgets" },
-  { value: "overlay", label: "Overlays" },
-]
+/** Pills and section headings both read from the shared labels — one spelling, one order. */
+const CATEGORIES = (Object.entries(CATEGORY_LABELS) as [ComponentCategory, string][]).map(
+  ([value, label]) => ({ value, label })
+)
 
 // A board and a month grid only read as a preview scaled down; the 133% width
 // gives the scaled content the full card back. Everything else, including the

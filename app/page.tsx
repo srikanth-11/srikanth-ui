@@ -3,7 +3,7 @@ import { KanbanDemo } from "@/components/demos/kanban-demo"
 import { EventCalendarDemo } from "@/components/demos/event-calendar-demo"
 import { ColorPickerDemo } from "@/components/demos/color-picker-demo"
 import { Hero } from "@/components/landing/hero"
-import { registryMeta, SITE_URL } from "@/lib/registry-meta"
+import { registryIndex, SITE_URL } from "@/lib/registry-index"
 
 const INSTALL = `npx shadcn@latest add ${SITE_URL}/r/time-picker.json`
 
@@ -58,10 +58,10 @@ export default function Home() {
         <div className="mx-auto w-full max-w-6xl px-6 py-20">
           <h2 className="text-3xl font-semibold tracking-tight">Everything in the registry</h2>
           <p className="text-muted-foreground mt-2 max-w-xl">
-            {registryMeta.length} components. Each tile opens it in the gallery.
+            {registryIndex.length} components. Each tile opens it in the gallery.
           </p>
           <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {registryMeta.map(({ name, title, category }) => (
+            {registryIndex.map(({ name, title, category }) => (
               <Link
                 key={name}
                 href={`/components#${name}`}

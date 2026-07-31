@@ -14,16 +14,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import type { ComponentCategory } from "@/lib/registry-index"
-
-// TODO(Task 3): consume CATEGORY_LABELS — put it in lib/registry-index.ts, not
-// registry-meta.ts, or the sidebar drags every demo into the client bundle.
-const CATEGORY_LABELS: Record<ComponentCategory, string> = {
-  form: "Form inputs",
-  picker: "Pickers & canvas",
-  widget: "Widgets",
-  overlay: "Overlays",
-}
+import { CATEGORY_LABELS, type ComponentCategory } from "@/lib/registry-index"
 
 const LABEL = "Search components"
 

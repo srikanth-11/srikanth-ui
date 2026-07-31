@@ -51,7 +51,7 @@ export const eventCalendarDoc: ComponentDoc = {
         {
           name: "onSlotClick",
           type: "(date: Date) => void",
-          description: "Fires with the empty space that was clicked: the start of the day in month view, the nearest half hour in week view.",
+          description: "Fires with the empty space that was clicked: the start of the day in month view, the start of the half hour you clicked in — floored, not rounded — in week view.",
         },
         {
           name: "weekStartsOn",
@@ -87,7 +87,7 @@ export const eventCalendarDoc: ComponentDoc = {
         {
           name: "className",
           type: "string",
-          description: "Extra classes for the grid. Renders the month grid or the week grid from the current view; arrow-key roving is month-view only, since in week view the event chips are the focus stops.",
+          description: "Extra classes for the grid. Renders the month grid or the week grid from the current view; arrow-key roving moves between day cells and exists in month view only, so in week view the event chips are the only focus stops.",
         },
       ],
     },
@@ -174,7 +174,6 @@ export const eventCalendarDoc: ComponentDoc = {
       title: "Month and week views",
       code: `"use client"
 
-import * as React from "react"
 import {
   EventCalendar,
   EventCalendarGrid,
@@ -237,7 +236,8 @@ export function Planner({ events }: { events: CalendarEvent[] }) {
       onViewChange={setView}
       date={date}
       onDateChange={setDate}
-      // Month view hands back the start of the day, week view the nearest half hour.
+      // Month view hands back the start of the day, week view the start of the
+      // half hour you clicked in (10:29 lands on 10:00).
       onSlotClick={(slot) => console.log("new event at", slot.toISOString())}
     >
       <EventCalendarToolbar />
@@ -262,7 +262,7 @@ const tallest = placed.reduce((max, p) => Math.max(max, p.height), 0)`,
   keyboard: [
     {
       keys: "Tab",
-      action: "Moves into the month grid, which is a single tab stop: focus lands on the day you last focused, or on the calendar's current date before any interaction.",
+      action: "Moves into the month grid, where the day cells share a single roving tab stop — event chips and \"+N more\" inside them are their own stops; focus lands on the day you last focused, or on the calendar's current date before any interaction.",
     },
     {
       keys: "Arrow Left / Arrow Right",

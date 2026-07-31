@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { InstallCommand } from "@/components/install-command"
+import { InstallPicker } from "@/components/landing/install-picker"
 import { registryIndex } from "@/lib/registry-index"
 import { GITHUB_URL } from "@/lib/site"
 
@@ -35,7 +35,7 @@ export function Hero() {
           dropped into your repo as source you can read and change.
         </p>
         <div className="reveal mt-9 w-full max-w-xl" style={{ animationDelay: `${STEP * 3}ms` }}>
-          <InstallCommand name="time-picker" />
+          <InstallPicker />
         </div>
         <div
           className="reveal mt-6 flex flex-wrap items-center justify-center gap-3"

@@ -50,6 +50,16 @@ describe("landing page", () => {
     expect(container.querySelectorAll('a[href^="/components#"]')).toHaveLength(registryMeta.length)
   })
 
+  it("swaps both install commands when the picker changes component", async () => {
+    const user = userEvent.setup()
+    render(<Home />)
+
+    await user.selectOptions(screen.getByRole("combobox", { name: /component/i }), "kanban")
+
+    expect(screen.getByText(`npx shadcn@latest add ${SITE_URL}/r/kanban.json`)).toBeInTheDocument()
+    expect(screen.getByText("npx shadcn@latest add @srikanth/kanban")).toBeInTheDocument()
+  })
+
   it("announces the copied state when the install command is copied", async () => {
     const user = userEvent.setup()
     render(<Home />)

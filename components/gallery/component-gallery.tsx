@@ -3,15 +3,7 @@ import * as React from "react"
 import Link from "next/link"
 import { registryMeta, type ComponentCategory } from "@/lib/registry-meta"
 import { CATEGORY_LABELS } from "@/lib/registry-index"
-import { InstallCommand } from "@/components/install-command"
 import { LazyPreview } from "@/components/gallery/lazy-preview"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 
 /** Pills and section headings both read from the shared labels — one spelling, one order. */
 const CATEGORIES = (Object.entries(CATEGORY_LABELS) as [ComponentCategory, string][]).map(
@@ -22,19 +14,6 @@ const CATEGORIES = (Object.entries(CATEGORY_LABELS) as [ComponentCategory, strin
 // gives the scaled content the full card back. Everything else, including the
 // third widget (a bell), sits at its own size in a shorter box.
 const WIDE = new Set(["event-calendar", "kanban"])
-
-// The image-cropper demo prints its own numbered steps directly above the
-// cropper (they are the whole point of that demo), and they are the same three
-// strings as its `howToUse`. Printing the modal's list too would show them
-// twice, so the modal defers to the demo for this one component.
-const DEMO_RENDERS_OWN_STEPS = new Set(["image-cropper"])
-
-// The tour dims the page with a position:fixed overlay, and DialogContent is
-// centred with a transform — which makes it the containing block for anything
-// fixed inside it, so the spotlight lands in the modal's own coordinates rather
-// than the viewport's. Verified in the browser; the design doc's sanctioned
-// fallback is to send this one component to its docs page instead.
-const NO_MODAL_DEMO = new Set(["onboarding-tour"])
 
 type Filter = ComponentCategory | "all"
 
@@ -61,11 +40,7 @@ function useHashHighlight() {
 export function ComponentGallery() {
   const [query, setQuery] = React.useState("")
   const [category, setCategory] = React.useState<Filter>("all")
-  const [selected, setSelected] = React.useState<string | null>(null)
   const highlight = useHashHighlight()
-  // Radix restores focus to a DialogTrigger, and these cards are not triggers
-  // (one Dialog serves the whole grid), so the opening card is remembered here.
-  const trigger = React.useRef<HTMLButtonElement | null>(null)
 
   const q = query.trim().toLowerCase()
   const matches = registryMeta.filter(
@@ -74,11 +49,6 @@ export function ComponentGallery() {
       (q === "" || `${entry.title} ${entry.description}`.toLowerCase().includes(q))
   )
   const grouped = category === "all" && q === ""
-  const entry = selected ? registryMeta.find((item) => item.name === selected) : undefined
-  const open = (name: string, card: HTMLButtonElement) => {
-    trigger.current = card
-    setSelected(name)
-  }
 
   return (
     <>
@@ -127,74 +97,22 @@ export function ComponentGallery() {
             <h2 className="mb-4 text-sm font-medium tracking-wide uppercase">{label}</h2>
             <Grid
               entries={matches.filter((item) => item.category === value)}
-              onOpen={open}
-              openName={selected}
               highlight={highlight}
             />
           </section>
         ))
       ) : (
-        <Grid entries={matches} onOpen={open} openName={selected} highlight={highlight} />
+        <Grid entries={matches} highlight={highlight} />
       )}
-
-      <Dialog open={entry !== undefined} onOpenChange={(isOpen) => !isOpen && setSelected(null)}>
-        {entry && (
-          <DialogContent
-            className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
-            onCloseAutoFocus={(event) => {
-              event.preventDefault()
-              trigger.current?.focus()
-            }}
-          >
-            <DialogHeader>
-              <DialogTitle>{entry.title}</DialogTitle>
-              <DialogDescription>{entry.description}</DialogDescription>
-            </DialogHeader>
-            <div className="bg-card flex min-h-40 items-center justify-center rounded-lg border p-4">
-              {NO_MODAL_DEMO.has(entry.name) ? (
-                <p className="text-muted-foreground text-sm">
-                  This one takes over the whole page, so it runs on its docs page rather than in
-                  this dialog.
-                </p>
-              ) : (
-                /* Keyed by name: every open gets a demo that starts from scratch. */
-                <entry.Demo key={entry.name} />
-              )}
-            </div>
-            {!DEMO_RENDERS_OWN_STEPS.has(entry.name) && (
-              <div>
-                <h3 className="mb-2 font-medium">How to use</h3>
-                <ol className="text-muted-foreground list-decimal space-y-1 ps-5 text-sm">
-                  {entry.howToUse.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
-            <InstallCommand name={entry.name} />
-            <Link
-              href={`/docs/${entry.name}`}
-              className="text-sm underline underline-offset-4"
-            >
-              Full docs →
-            </Link>
-          </DialogContent>
-        )}
-      </Dialog>
     </>
   )
 }
 
 function Grid({
   entries,
-  onOpen,
-  openName,
   highlight,
 }: {
   entries: typeof registryMeta
-  onOpen: (name: string, card: HTMLButtonElement) => void
-  /** The entry showing in the modal — its card preview stands down while it is. */
-  openName: string | null
   /** The entry named by the URL hash, if any — it rings itself so the scroll lands somewhere. */
   highlight: string
 }) {
@@ -205,13 +123,14 @@ function Grid({
           key={name}
           id={name}
           data-highlight={highlight === name ? "" : undefined}
-          className="bg-card hover:border-ring relative flex scroll-mt-32 flex-col rounded-xl border p-4 transition-colors motion-reduce:transition-none"
+          // scroll-mt clears the sticky stack: header 56px + filter bar 108
+          // (136 when the pill row wraps on a phone) bottoms out at 192px, and
+          // scroll-mt-48 is exactly that — anything shorter parks the ring
+          // under the bar.
+          className="bg-card hover:border-ring relative flex scroll-mt-48 flex-col rounded-xl border p-4 transition-colors motion-reduce:transition-none"
         >
           <LazyPreview previewHeightClass={WIDE.has(name) ? "h-64" : "h-40"}>
-            {/* Two live copies of one demo on a page collide: the tour resolves
-                its spotlight targets with document.querySelector, and would
-                light up this preview instead of the modal's instance. */}
-            {openName === name ? null : WIDE.has(name) ? (
+            {WIDE.has(name) ? (
               // The scaled child still *lays out* at 133%, so it needs a
               // full-width block of its own or the centring shoves it off-card.
               <div className="w-full">
@@ -225,13 +144,12 @@ function Grid({
           </LazyPreview>
           <h3 className="mt-4 font-medium">{title}</h3>
           <p className="text-muted-foreground mt-1 text-sm">{description}</p>
-          {/* The card surface is the button, but as an overlay rather than a
+          {/* The card surface is the link, but as an overlay rather than a
               wrapper: the preview mounts real controls, and a button inside a
-              button is not parseable HTML. */}
-          <button
-            type="button"
-            aria-label={`Open ${title} preview`}
-            onClick={(event) => onOpen(name, event.currentTarget)}
+              link is not parseable HTML. */}
+          <Link
+            href={`/docs/${name}`}
+            aria-label={`Open ${title} docs`}
             className="focus-visible:ring-ring/50 absolute inset-0 rounded-xl outline-none focus-visible:ring-3"
           />
         </article>

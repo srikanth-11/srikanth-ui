@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react"
+import { act, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { registryMeta } from "@/lib/registry-meta"
@@ -7,14 +7,19 @@ import { LazyPreview } from "./lazy-preview"
 
 // happy-dom has no IntersectionObserver, so every LazyPreview stays a skeleton here —
 // which is what we want: the gallery's own chrome is under test, not twelve demos.
-const cards = () => screen.getAllByRole("button", { name: /open .+ preview/i })
+const cards = () => screen.getAllByRole("link", { name: /open .+ docs/i })
 const search = () => screen.getByRole("searchbox", { name: /search/i })
 
 describe("ComponentGallery", () => {
-  it("renders one card per registry entry with an accessible open button", () => {
+  it("gives every card a named link to that component's docs page", () => {
     render(<ComponentGallery />)
     expect(cards()).toHaveLength(registryMeta.length)
-    expect(screen.getByRole("button", { name: "Open Kanban preview" })).toBeInTheDocument()
+    for (const { name, title } of registryMeta) {
+      expect(screen.getByRole("link", { name: `Open ${title} docs` })).toHaveAttribute(
+        "href",
+        `/docs/${name}`
+      )
+    }
   })
 
   it("pins the filter bar below the sticky site header, not under it", () => {
@@ -32,7 +37,7 @@ describe("ComponentGallery", () => {
 
     await user.clear(search())
     await user.type(search(), "zzz")
-    expect(screen.queryAllByRole("button", { name: /open .+ preview/i })).toHaveLength(0)
+    expect(screen.queryAllByRole("link", { name: /open .+ docs/i })).toHaveLength(0)
     expect(screen.getByText(/no components match/i)).toBeInTheDocument()
   })
 
@@ -52,45 +57,13 @@ describe("ComponentGallery", () => {
 
     await user.clear(search())
     await user.type(search(), "phone") // a form component, so nothing survives the pill
-    expect(screen.queryAllByRole("button", { name: /open .+ preview/i })).toHaveLength(0)
+    expect(screen.queryAllByRole("link", { name: /open .+ docs/i })).toHaveLength(0)
     expect(screen.getByText(/no components match/i)).toBeInTheDocument()
   })
 
-  it("card click opens the modal with title, steps, install command, docs link", async () => {
-    const user = userEvent.setup()
-    render(<ComponentGallery />)
-    const kanban = registryMeta.find((entry) => entry.name === "kanban")!
-
-    await user.click(screen.getByRole("button", { name: "Open Kanban preview" }))
-
-    const dialog = await screen.findByRole("dialog")
-    expect(within(dialog).getByText(kanban.title)).toBeInTheDocument()
-    expect(within(dialog).getByRole("heading", { name: /how to use/i })).toBeInTheDocument()
-    for (const step of kanban.howToUse) {
-      expect(within(dialog).getByText(step)).toBeInTheDocument()
-    }
-    expect(within(dialog).getByText(/\/r\/kanban\.json/)).toBeInTheDocument()
-    expect(within(dialog).getByRole("link", { name: /full docs/i })).toHaveAttribute(
-      "href",
-      "/docs/kanban"
-    )
-  })
-
-  // Steps-dedupe test deleted: the cropper demo no longer renders its own `<ol>`,
-  // so there is nothing to dedupe — app/docs-page.test.tsx counts the steps now.
-
-  it("Escape closes the modal and focus returns to the opening card", async () => {
-    const user = userEvent.setup()
-    render(<ComponentGallery />)
-    const card = screen.getByRole("button", { name: "Open Kanban preview" })
-
-    await user.click(card)
-    await screen.findByRole("dialog")
-    await user.keyboard("{Escape}")
-
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
-    await waitFor(() => expect(card).toHaveFocus())
-  })
+  // Modal-content test deleted: cards navigate to /docs/<name> now — app/docs-page.test.tsx owns title/steps/install.
+  // Steps-dedupe test deleted: the cropper demo no longer renders its own `<ol>`, so there is nothing to dedupe.
+  // Escape/focus-return test deleted: no dialog to close, and a link needs no focus restoration.
 
   it("marks the card named by the hash, on mount and on hashchange", () => {
     // A wall tile on the landing page navigates with pushState, which leaves
@@ -98,6 +71,8 @@ describe("ComponentGallery", () => {
     window.location.hash = "#kanban"
     render(<ComponentGallery />)
     expect(document.getElementById("kanban")).toHaveAttribute("data-highlight")
+    // …and lands clear of the sticky stack (header 56px + filter bar 108, 136 wrapped = 192).
+    expect(document.getElementById("kanban")).toHaveClass("scroll-mt-48")
 
     act(() => {
       window.location.hash = "#color-picker"
